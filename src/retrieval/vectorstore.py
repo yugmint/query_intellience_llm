@@ -1,6 +1,6 @@
 from langchain_community.vectorstores import FAISS
-from src.embeddings import get_embeddings
-from src.config import FAISS_PATH
+from src.retrieval.embeddings import get_embeddings
+from src.retrieval.config import FAISS_PATH
 
 def load_vectorstore():
     embeddings = get_embeddings()
