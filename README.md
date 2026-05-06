@@ -140,5 +140,3 @@ python main.py
 
 ---
 
-👉 I can help you write a **killer resume bullet (this project alone can carry your profile)**
-👉 Or help you add **Streamlit UI (demo-ready in 30 mins)**
