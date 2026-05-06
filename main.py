@@ -1,5 +1,5 @@
-from src.memory import get_memory
-from src.rag_pipeline import RAGPipeline
+from src.retrieval.memory import get_memory
+from src.retrieval.rag_pipeline import RAGPipeline
 
 def main():
     memory = get_memory()
