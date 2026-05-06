@@ -1,5 +1,5 @@
 from langchain_huggingface import HuggingFaceEmbeddings
-from src.config import EMBEDDING_MODEL
+from src.retrieval.config import EMBEDDING_MODEL
 
 def get_embeddings():
     return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)

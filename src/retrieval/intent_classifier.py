@@ -1,4 +1,4 @@
-from src.llm import get_llm
+from src.retrieval.llm import get_llm
 
 def classify_intent(query: str) -> str:
     llm = get_llm()

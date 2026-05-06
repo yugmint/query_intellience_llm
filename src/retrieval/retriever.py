@@ -1,4 +1,4 @@
-from src.config import TOP_K
+from src.retrieval.config import TOP_K
 
 def get_retriever(vectorstore):
     return vectorstore.as_retriever(search_kwargs={"k": TOP_K})

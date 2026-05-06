@@ -1,7 +1,7 @@
-from src.llm import get_llm
-from src.vectorstore import load_vectorstore
-from src.retriever import get_retriever
-from src.intent_classifier import classify_intent
+from src.retrieval.llm import get_llm
+from src.retrieval.vectorstore import load_vectorstore
+from src.retrieval.retriever import get_retriever
+from src.retrieval.intent_classifier import classify_intent
 
 class RAGPipeline:
     def __init__(self, memory):
