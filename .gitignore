@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -219,3 +220,26 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+=======
+# Virtual env
+venv/
+venv_rag/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Secrets
+cred.json
+.env
+
+# FAISS index (optional - you can include if small)
+faiss_index/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+>>>>>>> a5c9209 (Initial commit: modular RAG system with LangChain, FAISS, Groq LLM, memory, and intent routing)

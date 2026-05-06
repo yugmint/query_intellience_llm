@@ -1,0 +1,14 @@
+langchain
+langchain-community
+langchain-huggingface
+langchain-groq
+
+faiss-cpu
+sentence-transformers
+transformers
+torch
+
+pypdf
+python-dotenv
+
+ipykernel
