@@ -1,7 +1,7 @@
 import os
 import json
 from langchain.chat_models import init_chat_model
-from src.config import MODEL_NAME
+from src.retrieval.config import MODEL_NAME
 
 def load_api_key():
     with open("cred.json") as f:
