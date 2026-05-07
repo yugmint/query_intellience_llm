@@ -2,8 +2,8 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 
-from src.embeddings import get_embeddings
-from src.config import FAISS_PATH
+from src.retrieval.embeddings import get_embeddings
+from src.retrieval.config import FAISS_PATH
 
 
 def build_vector_db(file_path: str):
