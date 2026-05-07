@@ -45,15 +45,18 @@ Direct LLM      Retriever (FAISS)
 ```bash
 rag-project/
 │── data/                 # Input documents (PDFs)
-│── faiss_index/          # Stored vector database
+│── faiss_index/          # Stored vector database (ignored in Git)
 │
-│── src/
+src/
+│── ingestion/
+│    ├── ingestion_pipeline.py
+│── Retrieval/
 │    ├── config.py        # Configurations
 │    ├── llm.py           # LLM initialization (Groq)
 │    ├── embeddings.py    # Embedding model
 │    ├── vectorstore.py   # FAISS loading
 │    ├── retriever.py     # Retrieval logic
-│    ├── intent_classifier.py
+│    ├── intent_classifier.py   # Classify the intent i.e. knowledge/chitchat/greetings
 │    ├── memory.py        # Chat history
 │    ├── rag_pipeline.py  # Core pipeline
 │
