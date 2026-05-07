@@ -56,7 +56,6 @@ src/
 │    ├── embeddings.py    # Embedding model
 │    ├── vectorstore.py   # FAISS loading
 │    ├── retriever.py     # Retrieval logic
-│    ├── intent_classifier.py   # Classify the intent i.e. knowledge/chitchat/greetings
 │    ├── memory.py        # Chat history
 │    ├── rag_pipeline.py  # Core pipeline
 │
