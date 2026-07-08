@@ -8,6 +8,8 @@ sentence-transformers
 transformers
 torch
 
+streamlit
+
 pypdf
 python-dotenv
 
