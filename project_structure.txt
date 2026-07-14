@@ -1,0 +1,60 @@
+Project directory structure
+
+RAG_Project_1/
+│
+├── data/
+│   ├── raw/
+│   └── processed/
+│
+├── faiss_index/
+│
+├── notebooks/
+│
+├── src/
+│
+│   ├── config/
+│   │   ├── settings.py
+│   │   └── constants.py
+│   │
+│   ├── ingestion/
+│   │   ├── document_loader.py
+│   │   ├── chunker.py
+│   │   ├── embedding_pipeline.py
+│   │   └── ingestion_pipeline.py
+│   │
+│   ├── retrieval/
+│   │   ├── embeddings.py
+│   │   ├── llm.py
+│   │   ├── vectorstore.py
+│   │   ├── retriever.py
+│   │   └── memory.py
+│   │
+│   ├── graph/
+│   │   ├── state.py
+│   │   ├── resources.py
+│   │   ├── workflow.py
+│   │   │
+│   │   ├── nodes/
+│   │   │   ├── intent.py
+│   │   │   ├── retrieval.py
+│   │   │   ├── generation.py
+│   │   │   ├── memory.py
+│   │   │   └── router.py
+│   │   │
+│   │   └── prompts/
+│   │       ├── intent.py
+│   │       ├── generation.py
+│   │       └── rewrite.py
+│   │
+│   ├── services/
+│   │   └── rag_service.py
+│   │
+│   └── utils/
+│       ├── logger.py
+│       └── helpers.py
+│
+├── tests/
+│
+├── main.py
+├── requirements.txt
+└── README.md

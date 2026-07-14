@@ -1,22 +1,32 @@
 from dataclasses import dataclass
+from typing import Any
 
-from src.retrieval.llm import get_llm
 from src.retrieval.embeddings import get_embeddings
-from src.retrieval.vectorstore import load_vectorstore
+from src.retrieval.llm import get_llm
 from src.retrieval.retriever import get_retriever
+from src.retrieval.vectorstore import load_vectorstore
 
 
-@dataclass
+@dataclass(slots=True)
 class RAGResources:
+    """
+    Shared application resources.
 
-    llm: object
-    embeddings: object
-    vectorstore: object
-    retriever: object
-    memory: object
+    These objects are created once during application startup
+    and reused across the entire workflow.
+    """
+
+    llm: Any
+    embeddings: Any
+    vectorstore: Any
+    retriever: Any
+    memory: Any
 
 
-def build_resources(memory):
+def build_resources(memory) -> RAGResources:
+    """
+    Initialize and return all shared resources.
+    """
 
     embeddings = get_embeddings()
 

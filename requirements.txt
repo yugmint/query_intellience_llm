@@ -2,6 +2,7 @@ langchain
 langchain-community
 langchain-huggingface
 langchain-groq
+langgraph == 1.1.10
 
 faiss-cpu
 sentence-transformers

@@ -1,4 +1,5 @@
-from typing import TypedDict
+from typing import Any, TypedDict
+
 from langchain_core.documents import Document
 
 
@@ -7,23 +8,28 @@ class RAGState(TypedDict):
     Shared state passed between LangGraph nodes.
     """
 
-    # User Input
+    # User Query
     query: str
 
-    # Intent
+    # Intent Classification
     intent: str
 
-    # Retrieval
+    # Query Processing
     rewritten_query: str
-    retrieved_docs: list[Document]
+
+    # Retrieved Knowledge
+    documents: list[Document]
     context: str
 
     # Conversation
     chat_history: str
 
-    # Final Output
+    # Final Response
     answer: str
 
-    # Workflow Metadata
+    # Workflow
     retry_count: int
-    metadata: dict
+    status: str
+
+    # Debug / Observability
+    metadata: dict[str, Any]
