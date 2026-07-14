@@ -1,20 +1,26 @@
-from src.retrieval.memory import get_memory
-from src.retrieval.rag_pipeline import RAGPipeline
+from src.services.rag_services import RAGService
+
 
 def main():
-    memory = get_memory()
-    rag = RAGPipeline(memory)
 
-    print("RAG Chatbot Ready! Type 'exit' to quit.\n")
+    rag = RAGService()
+
+    print("=" * 60)
+    print("Production RAG System")
+    print("Type 'exit' to quit.")
+    print("=" * 60)
 
     while True:
-        query = input("You: ")
 
-        if query.lower() in ["exit", "quit"]:
+        query = input("\nYou: ")
+
+        if query.lower() == "exit":
             break
 
-        response = rag.query(query)
-        print("Bot:", response)
+        answer = rag.ask(query)
+
+        print(f"\nAssistant: {answer}")
+
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,5 @@
-from src.graph.state import RAGState
-from src.graph.resources import RAGResources
+from src.workflow.state import RAGState
+from src.workflow.resources import RAGResources
 
 
 def retrieve_documents(
