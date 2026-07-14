@@ -5,7 +5,7 @@ from src.utils.decorators import log_node
 from src.utils.logger import logger
 
 
-@log_node("Memory")
+@log_node("Update_Memory")
 def update_memory(
     state: RAGState,
     resources: RAGResources,

@@ -9,8 +9,8 @@ from src.utils.decorators import log_node
 from src.utils.logger import logger
 
 
-@log_node("Generation")
-def generate_answer(
+@log_node("Generate_Knowledge")
+def generate_knowledge_response(
     state: RAGState,
     resources: RAGResources,
 ):

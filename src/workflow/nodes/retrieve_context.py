@@ -5,7 +5,7 @@ from src.utils.decorators import log_node
 from src.utils.logger import logger
 
 
-@log_node("Retrieval")
+@log_node("Retrieve_Context")
 def retrieve_documents(
     state: RAGState,
     resources: RAGResources,
