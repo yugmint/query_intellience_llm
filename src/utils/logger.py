@@ -9,8 +9,8 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
     handlers=[
         logging.FileHandler(LOG_DIR / "rag.log"),
-        logging.StreamHandler()
-    ]
+        logging.StreamHandler(),
+    ],
 )
 
 logger = logging.getLogger("RAG")

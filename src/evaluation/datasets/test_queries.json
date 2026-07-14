@@ -1,0 +1,32 @@
+[
+    {
+        "id": 1,
+        "category": "knowledge",
+        "query": "Who is the author of this book?",
+        "expected": ""
+    },
+    {
+        "id": 2,
+        "category": "knowledge",
+        "query": "Summarize this book.",
+        "expected": ""
+    },
+    {
+        "id": 3,
+        "category": "greeting",
+        "query": "Hello",
+        "expected": ""
+    },
+    {
+        "id": 4,
+        "category": "chit_chat",
+        "query": "How are you today?",
+        "expected": ""
+    },
+    {
+        "id": 5,
+        "category": "out_of_context",
+        "query": "Explain Kubernetes.",
+        "expected": ""
+    }
+]

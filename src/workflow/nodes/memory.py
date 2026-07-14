@@ -1,13 +1,19 @@
 from src.workflow.resources import RAGResources
 from src.workflow.state import RAGState
 
+from src.utils.decorators import log_node
+from src.utils.logger import logger
 
+
+@log_node("Memory")
 def update_memory(
     state: RAGState,
     resources: RAGResources,
 ):
 
-    # Save conversation
+    # ------------------------
+    # Execute
+    # ------------------------
 
     resources.memory.add_user_message(
         state["query"]
@@ -17,4 +23,21 @@ def update_memory(
         state["answer"]
     )
 
-    return {}
+    # ------------------------
+    # Metrics
+    # ------------------------
+
+    logger.info(
+        f"Conversation Length : {len(resources.memory.messages)} messages"
+    )
+
+    # ------------------------
+    # Return
+    # ------------------------
+
+    return {
+        "metadata": {
+            **state.get("metadata", {}),
+            "conversation_length": len(resources.memory.messages),
+        },
+    }
