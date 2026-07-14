@@ -62,7 +62,7 @@ class RAGService:
 
             "rewritten_query": "",
 
-            "retrieved_docs": [],
+            "documents": [],
 
             "context": "",
 

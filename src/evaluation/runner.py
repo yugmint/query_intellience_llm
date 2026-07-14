@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.evaluation.models import EvaluationResult
-from src.services.rag_services import RAGService
+from src.services.rag_service import RAGService
 from src.utils.logger import logger
 
 

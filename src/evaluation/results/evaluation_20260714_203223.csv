@@ -1,0 +1,6 @@
+query,category,response,latency,success,metadata
+Who is the author of this book?,knowledge,Sudha Murty.,0.6466827000003832,True,"{'intent': 'knowledge', 'response_length': 12, 'conversation_length': 2}"
+Summarize this book.,knowledge,This book is a collection of stories that aim to help children and parents understand the unique relationship between three generations in a family and create bonds of love with one another.,0.500088599999799,True,"{'intent': 'knowledge', 'response_length': 190, 'conversation_length': 4}"
+Hello,greeting,Hello.,0.6158102000008512,True,"{'intent': 'greeting', 'response_length': 6, 'conversation_length': 6}"
+How are you today?,chit_chat,I don't know.,0.5238563000002614,True,"{'intent': 'chit_chat', 'response_length': 13, 'conversation_length': 8}"
+Explain Kubernetes.,out_of_context,I don't know.,0.5209401000010985,True,"{'intent': 'knowledge', 'response_length': 13, 'conversation_length': 10}"

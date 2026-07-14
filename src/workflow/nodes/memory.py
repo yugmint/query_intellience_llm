@@ -12,16 +12,18 @@ def update_memory(
 ):
 
     # ------------------------
+    # Prepare
+    # ------------------------
+
+    query = state["query"]
+    answer = state["answer"]
+
+    # ------------------------
     # Execute
     # ------------------------
 
-    resources.memory.add_user_message(
-        state["query"]
-    )
-
-    resources.memory.add_ai_message(
-        state["answer"]
-    )
+    resources.memory.add_user_message(query)
+    resources.memory.add_ai_message(answer)
 
     # ------------------------
     # Metrics

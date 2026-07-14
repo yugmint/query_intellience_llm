@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import Any
 
-from src.retrieval.embeddings import get_embeddings
-from src.retrieval.llm import get_llm
-from src.retrieval.retriever import get_retriever
-from src.retrieval.vectorstore import load_vectorstore
+from src.retrieval.embeddings import EmbeddingFactory
+from src.retrieval.llm import LLMFactory
+from src.retrieval.retriever import RetrieverFactory
+from src.retrieval.vectorstore import VectorStoreFactory
 
 
 @dataclass(slots=True)
@@ -28,13 +28,13 @@ def build_resources(memory) -> RAGResources:
     Initialize and return all shared resources.
     """
 
-    embeddings = get_embeddings()
+    embeddings = EmbeddingFactory.build()
 
-    vectorstore = load_vectorstore()
+    vectorstore = VectorStoreFactory.load()
 
-    retriever = get_retriever(vectorstore)
+    retriever = RetrieverFactory.build(vectorstore)
 
-    llm = get_llm()
+    llm = LLMFactory.build()
 
     return RAGResources(
         llm=llm,
