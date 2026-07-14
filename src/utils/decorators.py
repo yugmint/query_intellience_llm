@@ -17,7 +17,7 @@ def log_node(node_name: str):
             start_time = time.perf_counter()
 
             logger.info("=" * 80)
-            logger.info(f"🚀 Node Started : {node_name}")
+            logger.info(f"[START] Node: {node_name}")
 
             try:
 
@@ -25,8 +25,8 @@ def log_node(node_name: str):
 
                 elapsed = time.perf_counter() - start_time
 
-                logger.info(f"Node Completed : {node_name}")
-                logger.info(f"Execution Time : {elapsed:.4f} sec")
+                logger.info(f"[DONE] Node: {node_name}")
+                logger.info(f"[TIME] {elapsed:.4f} sec")
 
                 return result
 
@@ -34,8 +34,8 @@ def log_node(node_name: str):
 
                 elapsed = time.perf_counter() - start_time
 
-                logger.exception(f"Node Failed : {node_name}")
-                logger.info(f"⏱ Failed After : {elapsed:.4f} sec")
+                logger.exception(f"[FAILED] Node: {node_name}")
+                logger.info(f"[TIME] Failed After : {elapsed:.4f} sec")
 
                 raise
 
