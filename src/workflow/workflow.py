@@ -8,7 +8,15 @@ from src.workflow.nodes.retrieve_context import retrieve_documents
 from src.workflow.nodes.generate_knowledge import generate_knowledge_response
 from src.workflow.nodes.generate_conversation import generate_conversation
 from src.workflow.nodes.update_memory import update_memory
+from src.workflow.nodes.input_guardrail import validate_input
+from src.workflow.nodes.guardrail_response import guardrail_response
 
+def route_guardrail(state):
+
+    if state["is_valid"]:
+        return "continue"
+
+    return "reject"
 
 def route_by_intent(state: RAGState) -> str:
     """
@@ -33,6 +41,22 @@ def build_workflow(resources: RAGResources):
     # -------------------------
     # Register Nodes
     # -------------------------
+
+    builder.add_node(
+    "input_guardrail",
+    lambda state: validate_input(
+            state,
+            resources,
+        ),
+    )
+    
+    builder.add_node(
+    "guardrail_response",
+    lambda state: guardrail_response(
+            state,
+            resources,
+        ),
+    )
 
     builder.add_node(
         "intent",
@@ -63,7 +87,19 @@ def build_workflow(resources: RAGResources):
     # Workflow
     # -------------------------
 
-    builder.add_edge(START, "intent")
+    builder.add_edge(
+    START,
+        "input_guardrail",
+    )
+
+    builder.add_conditional_edges(
+    "input_guardrail",
+    route_guardrail,
+        {
+            "continue": "intent",
+            "reject": "guardrail_response",
+        },
+    )
 
     builder.add_conditional_edges(
         "intent",
@@ -81,7 +117,13 @@ def build_workflow(resources: RAGResources):
     # Conversation Branch
     builder.add_edge("conversation", "memory")
 
-    # End
+    # Memory Branch
     builder.add_edge("memory", END)
+
+    #End
+    builder.add_edge(
+    "guardrail_response",
+    END,
+)
 
     return builder.compile()

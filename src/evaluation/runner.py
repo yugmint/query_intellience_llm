@@ -23,7 +23,7 @@ class EvaluationRunner:
         self.dataset_path = (
             Path(__file__).parent
             / "datasets"
-            / "test_queries.json"
+            / "workflow_test_suite.json"
         )
 
         self.results_dir = (
