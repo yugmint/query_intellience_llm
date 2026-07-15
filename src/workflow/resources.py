@@ -11,9 +11,6 @@ from src.retrieval.vectorstore import VectorStoreFactory
 class RAGResources:
     """
     Shared application resources.
-
-    These objects are created once during application startup
-    and reused across the entire workflow.
     """
 
     llm: Any
@@ -25,16 +22,18 @@ class RAGResources:
 
 def build_resources(memory) -> RAGResources:
     """
-    Initialize and return all shared resources.
+    Build all shared resources once.
     """
 
-    embeddings = EmbeddingFactory.build()
+    # Build once
+    embeddings = EmbeddingFactory.get()
 
-    vectorstore = VectorStoreFactory.load()
+    # Reuse the same embedding instance
+    vectorstore = VectorStoreFactory.load(embeddings)
 
     retriever = RetrieverFactory.build(vectorstore)
 
-    llm = LLMFactory.build()
+    llm = LLMFactory.get()
 
     return RAGResources(
         llm=llm,
