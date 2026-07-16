@@ -17,7 +17,9 @@ def retrieve_documents(
 
     query = state.get("rewritten_query") or state["query"]
 
-    logger.info(f"Retrieval Query : {query}")
+    logger.info(
+        f"Retrieval Query : {query}"
+        )
 
     # ------------------------
     # Execute

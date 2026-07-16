@@ -31,3 +31,7 @@ class LLMFactory:
             )
 
         return cls._instance
+
+    @classmethod
+    def build(cls):
+        return cls.get()

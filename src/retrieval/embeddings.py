@@ -47,3 +47,7 @@ class EmbeddingFactory:
         else:
             logger.debug("Reusing existing embedding model instance.")
         return cls._instance
+
+    @classmethod
+    def build(cls):
+        return cls.get()

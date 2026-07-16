@@ -10,6 +10,7 @@ from src.workflow.nodes.generate_conversation import generate_conversation
 from src.workflow.nodes.update_memory import update_memory
 from src.workflow.nodes.input_guardrail import validate_input
 from src.workflow.nodes.guardrail_response import guardrail_response
+from src.workflow.nodes.process_query import process_query
 
 def route_guardrail(state):
 
@@ -59,8 +60,19 @@ def build_workflow(resources: RAGResources):
     )
 
     builder.add_node(
+        "process_query",
+        lambda state: process_query(
+            state, 
+            resources
+        ),
+    )
+
+    builder.add_node(
         "intent",
-        lambda state: detect_intent(state, resources),
+        lambda state: detect_intent(
+            state, 
+            resources
+        ),
     )
 
     builder.add_node(
@@ -105,25 +117,42 @@ def build_workflow(resources: RAGResources):
         "intent",
         route_by_intent,
         {
-            "knowledge": "retrieve",
+            "knowledge": "process_query",
             "conversation": "conversation",
         },
     )
 
     # Knowledge Branch
-    builder.add_edge("retrieve", "generate")
-    builder.add_edge("generate", "memory")
+    builder.add_edge(
+        "process_query", 
+        "retrieve"
+        )
+    
+    builder.add_edge(
+        "retrieve", 
+        "generate"
+        )
+    
+    builder.add_edge(
+        "generate", 
+        "memory")
 
     # Conversation Branch
-    builder.add_edge("conversation", "memory")
+    builder.add_edge(
+        "conversation", 
+        "memory"
+        )
 
     # Memory Branch
-    builder.add_edge("memory", END)
+    builder.add_edge(
+        "memory", 
+        END
+        )
 
     #End
     builder.add_edge(
     "guardrail_response",
     END,
-)
+        )
 
     return builder.compile()
