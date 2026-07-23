@@ -1,17 +1,74 @@
-langchain
-langchain-community
-langchain-huggingface
-langchain-groq
-langgraph == 1.1.10
+# ==========================
+# Core Scientific Stack
+# ==========================
+numpy==2.2.6
+pandas==2.3.1
+scipy==1.16.0
+scikit-learn==1.7.1
 
-faiss-cpu
-sentence-transformers
-transformers
-torch
+# ==========================
+# PyTorch (CPU)
+# ==========================
+torch==2.7.1
+torchvision==0.22.1
 
-streamlit
+# ==========================
+# HuggingFace
+# ==========================
+transformers==4.53.2
+sentence-transformers==5.0.0
+tokenizers==0.21.4
+huggingface-hub==0.33.4
 
-pypdf
-python-dotenv
+# ==========================
+# LangChain / LangGraph
+# ==========================
+langchain==0.3.27
+langchain-core==0.3.72
+langchain-community==0.3.27
+langchain-text-splitters==0.3.9
+langchain-huggingface==0.3.1
+langgraph==0.2.76  # was missing from this file entirely; pinned to a version compatible with langchain-core 0.3.x (langgraph>=0.3 pulls in langchain-core>=1.0, which conflicts with every other langchain-* pin below)
 
-ipykernel
+# ==========================
+# Vector Database
+# ==========================
+faiss-cpu==1.11.0.post1
+
+# ==========================
+# Document Loaders
+# ==========================
+pymupdf==1.26.3
+pypdf==5.9.0
+unstructured==0.18.11
+
+# ==========================
+# Tokenization
+# ==========================
+tiktoken==0.9.0
+
+# ==========================
+# Utilities
+# ==========================
+python-dotenv==1.1.1
+tqdm==4.67.1
+requests==2.32.4
+
+# ==========================
+# LLM APIs
+# ==========================
+langchain-groq==0.3.6
+openai==1.97.1
+
+# ==========================
+# API service
+# ==========================
+fastapi==0.139.2
+uvicorn==0.51.0
+
+# ==========================
+# Development
+# ==========================
+ipykernel==6.30.0
+jupyter==1.1.1
+pytest==9.1.1

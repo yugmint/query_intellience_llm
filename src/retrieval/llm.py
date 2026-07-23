@@ -14,6 +14,9 @@ class LLMFactory:
 
     @staticmethod
     def _load_api_key():
+        if os.environ.get("GROQ_API_KEY"):
+            return
+
         with open("cred.json") as f:
             data = json.load(f)
             os.environ["GROQ_API_KEY"] = data["grok_api_key"]
