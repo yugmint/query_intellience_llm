@@ -54,24 +54,34 @@ python -m src.evaluation.runner      # evaluation suite -> src/evaluation/result
 pytest tests/ -v
 ```
 
-`tests/` (added 2026-07-24) currently covers the guardrail layer only —
-`test_guardrail_validators.py` (each of the 5 validators in isolation) and
-`test_input_guardrail.py` (chain ordering and short-circuit behavior). Pure
-functions, no LLM/FAISS needed, fast enough to run on every change. One test
-is an intentional `pytest.mark.xfail(strict=True)` documenting a real,
-unfixed prompt-injection bypass (see `05-roadmap.md`) — if it ever starts
-passing, that's a signal the bypass got fixed and the `xfail` should come
-off, not a flake to ignore.
+`tests/` (added 2026-07-24) covers the guardrail layer
+(`test_guardrail_validators.py`, `test_input_guardrail.py`) and every
+workflow node (`test_node_*.py`, one file per node) — 56 tests, all pure
+unit tests, no real LLM/FAISS/network call. `conftest.py` has the shared
+fakes:
 
-Individual workflow nodes (intent, retrieve, generate, process_query,
-update_memory) still have no unit tests — the only thing exercising them is
+- `FakeLLM` — stand-in for `resources.llm`; records every prompt, returns
+  a scripted response (or raises, to test a failure path).
+- `FakeRetriever` — stand-in for `resources.retriever`.
+- an autouse fixture resetting the `QueryRewriter` singleton between
+  tests — it caches itself on the class (`QueryRewriter._instance`), so
+  without this a `FakeLLM` from one test would leak into every later test
+  that touches `process_query`.
+
+`update_memory` tests use the real `InMemoryChatMessageHistory` rather than
+a fake — it's a plain in-process object, nothing worth mocking.
+
+One guardrail test is an intentional `pytest.mark.xfail(strict=True)`
+documenting a real, unfixed prompt-injection bypass (see `05-roadmap.md`)
+— if it ever starts passing, that's a signal the bypass got fixed and the
+`xfail` should come off, not a flake to ignore.
+
 `src/evaluation/runner.py` against
-`src/evaluation/datasets/workflow_test_suite.json`, which runs the full
-compiled workflow end to end (guardrails, intent routing, retrieval,
-generation) and records latency/success per case, not unit-level
-assertions. Treat a new category added to `workflow_test_suite.json` as the
-way to pin down a node-level behavior you care about until real unit tests
-exist for that node — see `05-roadmap.md`.
+`src/evaluation/datasets/workflow_test_suite.json` remains the only thing
+exercising the full *compiled graph* end to end (guardrails, intent
+routing, retrieval, generation) with latency/success recorded per case —
+unit tests catch "this node's logic broke," the eval harness catches
+"answer quality regressed." Keep using both.
 
 ## Working on the workflow graph
 

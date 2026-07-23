@@ -96,11 +96,25 @@ actively changing.
       `tests/test_input_guardrail.py` (chain ordering/short-circuit
       behavior), 22 passing + 1 intentional `xfail`. First `tests/` +
       `pyproject.toml`/pytest config this repo has ever had.
-- [ ] **Unit tests for individual workflow nodes** (intent, retrieve,
-      generate, process_query, update_memory) — still only exercised via
-      `src/evaluation/runner.py`, end to end through the compiled graph,
-      not per-node. Would need the LLM/retriever mocked; guardrail tests
-      were the easy first step since they're pure functions.
+- [x] **Unit tests for individual workflow nodes** — added 2026-07-24.
+      All 7 nodes covered (`intent`, `retrieve_context`, `generate_knowledge`,
+      `generate_conversation`, `process_query`, `update_memory`,
+      `input_guardrail`/`guardrail_response`), 56 tests total (with the
+      guardrail-layer tests). `tests/conftest.py` provides `FakeLLM`/
+      `FakeRetriever` (record calls, return scripted responses, no real
+      network/FAISS call) and an autouse fixture resetting the
+      `QueryRewriter` singleton between tests (it caches itself on the
+      class, so tests would otherwise leak a stale `FakeLLM` into later
+      ones). `update_memory` tests use the real `InMemoryChatMessageHistory`
+      rather than a fake, since it's a plain in-process object with
+      nothing worth mocking. Found and pinned down a real asymmetry while
+      writing `test_node_generate_conversation.py`: on a JSON-parse
+      failure, the node falls back to the original, un-stripped
+      `response.content` rather than the fence-stripped `content` it just
+      computed — cosmetic today, but now a change there won't happen
+      silently.
+      `src/evaluation/runner.py` remains the only thing exercising the
+      *compiled graph* end to end; these are unit-level, not a replacement.
 - [ ] **Fix the whitespace-based prompt-injection bypass** found while
       writing the guardrail tests: `PromptInjectionValidator` runs before
       `QueryNormalizer` in the chain, so `"ignore   previous   instructions"`
