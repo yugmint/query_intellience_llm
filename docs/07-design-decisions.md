@@ -46,6 +46,18 @@ normalizing before length-checking) would change what actually gets
 rejected. If you add a new validator, decide deliberately where in this
 order it belongs — don't just append it.
 
+**A real cost of this ordering, found and fixed 2026-07-24:**
+`PromptInjectionValidator` running before `QueryNormalizer` meant pattern
+matching happened against un-normalized whitespace — `"ignore   previous
+  instructions"` (extra internal spaces) evaded every pattern entirely,
+since the regexes expect single spaces. Fixed *without* reordering the
+chain (reordering would've shifted `LengthValidator`'s behavior too, since
+it also runs before normalization today, deliberately): `PromptInjectionValidator`
+now matches against a whitespace-collapsed copy of the query internally,
+without writing it back to `state["query"]` — normalizing the actual query
+is still `QueryNormalizer`'s job. Covered by
+`tests/test_guardrail_validators.py::test_extra_whitespace_no_longer_bypasses_injection_detection`.
+
 ---
 
 ### Vector store: FAISS on a shared volume, not an embedded client-server DB

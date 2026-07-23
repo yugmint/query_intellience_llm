@@ -26,9 +26,18 @@ class PromptInjectionValidator(BaseValidator):
 
         query = state.get("query", "").lower()
 
+        # Match against a whitespace-collapsed copy so padding (extra
+        # spaces/tabs/newlines inside a blocked phrase, e.g. "ignore
+        # previous  instructions") can't be used to dodge detection.
+        # This validator runs before QueryNormalizer in InputGuardrail's
+        # chain, so state["query"] itself is deliberately left untouched
+        # here -- normalizing the actual query is still QueryNormalizer's
+        # job, unchanged.
+        normalized_query = re.sub(r"\s+", " ", query)
+
         for pattern in PATTERNS:
 
-            if re.search(pattern, query):
+            if re.search(pattern, normalized_query):
 
                 state["is_valid"] = False
 

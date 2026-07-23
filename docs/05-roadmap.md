@@ -115,15 +115,14 @@ actively changing.
       silently.
       `src/evaluation/runner.py` remains the only thing exercising the
       *compiled graph* end to end; these are unit-level, not a replacement.
-- [ ] **Fix the whitespace-based prompt-injection bypass** found while
-      writing the guardrail tests: `PromptInjectionValidator` runs before
-      `QueryNormalizer` in the chain, so `"ignore   previous   instructions"`
-      (extra internal spaces) currently evades every pattern in `PATTERNS`
-      entirely — pinned down by the `xfail`'d
-      `test_extra_whitespace_bypasses_injection_detection`. Likely fix:
-      match against a whitespace-collapsed copy of the query for detection
-      purposes, without changing what actually reaches the LLM/normalizer
-      order for other validators.
+- [x] **Fix the whitespace-based prompt-injection bypass** — fixed
+      2026-07-24. `PromptInjectionValidator` now matches against a
+      whitespace-collapsed copy of the query internally (chain order and
+      `state["query"]` itself untouched) instead of the raw query, so
+      `"ignore   previous   instructions"` (extra internal spaces) is
+      caught like the single-spaced form. The `xfail` in
+      `test_guardrail_validators.py` is gone — it's now a normal,
+      permanently-passing assertion. See `07-design-decisions.md`.
 
 ## Guardrails (README's own "Future Guardrails" list, unchanged)
 

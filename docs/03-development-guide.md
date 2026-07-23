@@ -71,10 +71,9 @@ fakes:
 `update_memory` tests use the real `InMemoryChatMessageHistory` rather than
 a fake — it's a plain in-process object, nothing worth mocking.
 
-One guardrail test is an intentional `pytest.mark.xfail(strict=True)`
-documenting a real, unfixed prompt-injection bypass (see `05-roadmap.md`)
-— if it ever starts passing, that's a signal the bypass got fixed and the
-`xfail` should come off, not a flake to ignore.
+A whitespace-based prompt-injection bypass found while writing these tests
+(tracked as an `xfail` initially) is now fixed — see `07-design-decisions.md`
+for what it was and how it was fixed without reordering the guardrail chain.
 
 `src/evaluation/runner.py` against
 `src/evaluation/datasets/workflow_test_suite.json` remains the only thing
