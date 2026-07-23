@@ -6,6 +6,27 @@ reconstructed from `git log` and grouped into the same phases as §10 of
 `DOCUMENTATION.md`, without version numbers of its own (it was never
 tagged at the time).
 
+## [0.1.0] — 2026-07-24
+
+Presentation & correctness polish — small, high-leverage fixes to make
+what `v0.0.1` already did legible, not new features.
+
+**Added:**
+- "Proof It Works" section in `README.md` — a real, live-captured
+  conversation transcript (greeting → knowledge → pronoun follow-up
+  testing session-scoped memory/query rewriting → guardrail rejection),
+  not hand-written or fabricated.
+
+**Fixed:**
+- `RAGState` declared `retrieved_documents`/`reranked_documents`, but
+  `retrieve_context.py` had always written to an undeclared `documents`
+  key instead. Renamed the declared field to `documents` to match
+  reality; `reranked_documents` will come back for real once reranking
+  (v0.2.0) exists. See `07-design-decisions.md`.
+- Removed the unused `openai` dependency from `requirements.txt`
+  (confirmed unreferenced anywhere in `src/`; Groq via `langchain-groq`
+  is the actual LLM provider).
+
 ## [0.0.1] — 2026-07-24
 
 First tagged version — a direct answer to "is this prod-level yet" (no)

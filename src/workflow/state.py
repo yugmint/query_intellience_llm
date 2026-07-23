@@ -30,8 +30,13 @@ class RAGState(TypedDict):
     # -------------------------
     # Retrieval
     # -------------------------
-    retrieved_documents: list[Document]
-    reranked_documents: list[Document]
+    # Matches what nodes/retrieve_context.py actually writes. Was
+    # declared as retrieved_documents/reranked_documents until 2026-07-24
+    # -- neither was ever written by any node, so the declared contract
+    # didn't match reality. reranked_documents will come back once
+    # reranking (roadmap v0.2.0) actually exists; no point declaring it
+    # speculatively before then.
+    documents: list[Document]
     context: str
 
     # -------------------------

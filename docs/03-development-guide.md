@@ -89,11 +89,12 @@ unit tests catch "this node's logic broke," the eval harness catches
 - Routing logic (`route_guardrail`, `route_by_intent`) lives directly in
   `workflow.py` next to `build_workflow` — keep new conditional routing
   there rather than scattering `if` branches inside node functions.
-- `RAGState` (`state.py`) is the contract every node reads/writes against.
-  Note: it declares `retrieved_documents`/`reranked_documents`, but
-  `retrieve_context.py` currently writes to `documents` instead — a known
-  drift, not intentional design (see `07-design-decisions.md`). If you touch
-  retrieval, reconcile this rather than adding a third key.
+- `RAGState` (`state.py`) is the contract every node reads/writes against
+  — declares `documents: list[Document]` for retrieval results (fixed
+  2026-07-24; used to declare `retrieved_documents`/`reranked_documents`,
+  which no node ever wrote — see `07-design-decisions.md`). If you add
+  reranking (roadmap v0.2.0), add a real `reranked_documents` field then,
+  not speculatively ahead of the implementation.
 
 ## Docker
 

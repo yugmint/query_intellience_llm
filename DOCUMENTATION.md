@@ -67,16 +67,17 @@ python main.py
 ### 3.1 State — `state.py`
 
 `RAGState` (TypedDict), the shape threaded through every node: `query`,
-`rewritten_query`, `is_valid`, `guardrail_reason`, `intent`,
-`retrieved_documents`, `reranked_documents`, `context`, `chat_history`,
-`answer`, `retry_count`, `status`, `metadata`.
+`rewritten_query`, `is_valid`, `guardrail_reason`, `intent`, `documents`,
+`context`, `chat_history`, `session_id`, `session_memory`, `answer`,
+`retry_count`, `status`, `metadata`.
 
-> **Note for maintainers:** the declared state includes `retrieved_documents`
-> / `reranked_documents`, but the retrieval node currently writes to a
-> `documents` key instead (see `retrieve_context.py` below). This is a minor
-> schema/implementation drift worth reconciling — it doesn't break anything
-> today since nothing downstream reads `retrieved_documents`, but it means the
-> `TypedDict` doesn't fully describe what's actually in state at runtime.
+> **Fixed 2026-07-24:** this used to declare `retrieved_documents` /
+> `reranked_documents`, but `retrieve_context.py` actually wrote to a
+> `documents` key instead — the `TypedDict` didn't describe what was
+> actually in state at runtime. Renamed the declared field to `documents`
+> to match reality; `reranked_documents` will come back once reranking
+> (roadmap v0.2.0) is actually implemented, rather than being declared
+> speculatively ahead of it.
 
 ### 3.2 Resources — `resources.py`
 

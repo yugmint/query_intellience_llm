@@ -58,7 +58,6 @@ requests==2.32.4
 # LLM APIs
 # ==========================
 langchain-groq==0.3.6
-openai==1.97.1
 
 # ==========================
 # API service

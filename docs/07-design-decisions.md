@@ -147,3 +147,31 @@ the standalone `Dockerfile`/API deployment (§12 of `DOCUMENTATION.md`)
 possible without either committing a secret or requiring every deployment
 to carry a JSON file — env vars are the more standard container-native path.
 Local dev via `cred.json` is unaffected.
+
+---
+
+### `RAGState.documents`, not `retrieved_documents`/`reranked_documents`
+
+**Decision (2026-07-24):** `state.py` declares a single `documents: list[Document]`
+field for retrieval output.
+
+**What it replaced:** the state used to declare both
+`retrieved_documents` and `reranked_documents` — but `retrieve_context.py`
+had always written to a `documents` key that wasn't declared at all.
+Harmless at runtime (`RAGState` is a `TypedDict`, so Python doesn't enforce
+it), but the declared contract didn't describe reality, and
+`reranked_documents` was speculative — declared for a reranking feature
+(roadmap v0.2.0) that doesn't exist yet.
+
+**Why fix it this way, not the other way (rename the write site to match
+the old declared field):** `documents` is the accurate, current name for
+what the field holds today — pre-rerank retrieval output. Keeping
+`retrieved_documents` around would have meant either leaving
+`reranked_documents` as dead, aspirational declaration, or writing to it
+from code that doesn't rerank anything yet. Neither is better than just
+declaring what's actually true now and adding `reranked_documents` for
+real when reranking is actually implemented — see the "don't design for
+hypothetical future requirements" instinct elsewhere in this codebase
+(e.g. `ingestion_fixed`'s `DocumentChunk`/`EmbeddingRecord` are the
+one deliberate exception, and even those are called out explicitly as
+such in their own docstrings).

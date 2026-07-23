@@ -26,6 +26,64 @@ The long-term goal is to evolve this project into a complete enterprise-grade Do
 
 ---
 
+# Proof It Works
+
+A real session against this codebase (`v0.0.1`, `RAGService` called directly
+— no editing, no cherry-picked retries), showing intent routing, guardrails,
+retrieval, and session-scoped memory all in one conversation:
+
+```text
+=== Turn 1: greeting (should skip retrieval entirely) ===
+intent: greeting
+answer: Hello! How can I assist you today?
+
+=== Turn 2: knowledge question (triggers retrieval) ===
+intent: knowledge
+answer: Ajji is the grandmother.
+
+=== Turn 3: pronoun follow-up (tests session memory + query rewriting) ===
+intent: knowledge
+rewritten_query: Activities of Ajji the grandmother
+answer: She loved to tell wonderful stories, particularly in the late afternoon.
+
+=== Turn 4: guardrail rejection (prompt injection) ===
+status: rejected
+answer: Prompt injection detected.
+```
+
+What each turn is actually demonstrating:
+
+- **Turn 1** — intent classification correctly routes a greeting straight to
+  conversation, skipping FAISS retrieval entirely (see `route_by_intent` in
+  `src/workflow/workflow.py`).
+- **Turn 2** — a real knowledge question hits the retriever against the
+  ingested book and grounds the answer in retrieved context.
+- **Turn 3** — "she" isn't resolvable from the query alone. `QueryRewriter`
+  used the same session's prior turn to rewrite it to `"Activities of Ajji
+  the grandmother"` before retrieval ran, and the answer is correct. Run
+  this same query under a *different* `session_id` and it comes back
+  unresolved and answers something else entirely — memory is genuinely
+  session-scoped, not shared. See §12 of `DOCUMENTATION.md`.
+- **Turn 4** — `PromptInjectionValidator` catches the attempt before it
+  reaches intent detection or retrieval at all.
+
+Reproduce it yourself:
+
+```bash
+python -c "
+from src.services.rag_service import RAGService
+rag = RAGService()
+print(rag.ask('Hi there!', session_id='demo'))
+print(rag.ask('Who is Ajji in this book?', session_id='demo'))
+print(rag.ask('What did she love to do?', session_id='demo'))
+"
+```
+
+(Needs a real FAISS index at `faiss_index/` — see `docs/03-development-guide.md`
+if you're starting from a fresh clone with no index built yet.)
+
+---
+
 # Documentation
 
 This README covers the feature list and roadmap. For the technical detail:

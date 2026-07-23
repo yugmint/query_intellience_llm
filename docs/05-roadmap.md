@@ -50,10 +50,6 @@ before this session; all of it is now fixed and covered by tests.
 
 **Known limitations carried into v0.1.0+** (not blockers for calling this
 a stable baseline, just not yet done):
-- `RAGState`'s `retrieved_documents`/`reranked_documents` fields are
-  declared but never written — `retrieve_context.py` writes `documents`
-  instead. Harmless (nothing reads the declared keys) but the state
-  contract doesn't describe reality.
 - Session memory has no persistence or eviction/TTL — an in-memory dict,
   fine for moderate traffic, not for long-running high-volume use.
 - No rate limiting on the API.
@@ -62,17 +58,20 @@ a stable baseline, just not yet done):
 
 ---
 
-## v0.1.0 — Presentation & correctness polish (planned)
+## v0.1.0 — Presentation & correctness polish (2026-07-24)
 
 Small, high-leverage fixes to make what's already true legible — not new
-features.
+features. All three shipped in the same session as `v0.0.1`.
 
-- [ ] A real example conversation/transcript in the README, so someone
-      evaluating this repo can see guardrails/intent/retrieval actually
-      working without standing up the whole stack themselves.
-- [ ] Reconcile `RAGState`'s `retrieved_documents`/`reranked_documents`
-      vs. what `retrieve_context.py` actually writes (`documents`).
-- [ ] Remove the unused `openai` dependency (or document why it's kept).
+- [x] A real example conversation/transcript in the README — captured
+      live against `v0.0.1` (greeting → knowledge → pronoun follow-up →
+      guardrail rejection), not hand-written. See "Proof It Works" in
+      `README.md`.
+- [x] Reconcile `RAGState`'s `retrieved_documents`/`reranked_documents`
+      vs. what `retrieve_context.py` actually writes — renamed the
+      declared field to `documents`. See `07-design-decisions.md`.
+- [x] Removed the unused `openai` dependency — confirmed unreferenced
+      anywhere in `src/` (Groq via `langchain-groq` is the actual provider).
 
 ## v0.2.0 — Intelligence layer (README Phase 2)
 
