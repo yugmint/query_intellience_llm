@@ -67,9 +67,10 @@ Concrete lessons from this repo's own history — not abstract advice:
 - **Author identity is split** between `Yugendra` and `Yugendra Salunke` —
   standardize `git config user.name` so `git shortlog`/`git log --author`
   searches don't split across two identities.
-- **No tags exist**, despite the README declaring "Phase 1 completion" —
-  tag phase boundaries as they happen
-  (`git tag -a v0.1.0-phase1 -m "..."`).
+- **No tags existed**, despite the README declaring "Phase 1 completion" —
+  fixed 2026-07-24, `v0.0.1` tagged as the first stable baseline (see
+  `05-roadmap.md`/`06-release-notes.md`). Keep tagging version milestones
+  as they happen going forward, not retroactively.
 
 One commit per logical change, a message that says *why* if it's not
 obvious from the diff, and commit deletions as deliberately as additions.

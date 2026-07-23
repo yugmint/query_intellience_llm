@@ -1,138 +1,119 @@
 # 05 — Roadmap
 
-The root `README.md` already lays out a 5-phase roadmap (Production RAG
-Workflow → Intelligence Layer → Advanced Retrieval → Enterprise Features →
-Agentic Intelligence). This page doesn't repeat that in full — it's the more
-concrete, closer-in list: specific gaps found while documenting the current
-codebase, in rough priority order. Current overall status: **pre-MVP**, per
-project status — `ingestion_fixed` is considered done; this repo is still
-actively changing.
+Versioned by milestone (semver, pre-1.0 — `0.MINOR.0` for a meaningful
+batch of work, `0.0.PATCH` for small fixes between them). First tag is
+`v0.0.1`, not `v1.0.0`: unlike the sibling `ingestion_fixed` (already
+considered stable, tagged `v1.0.0`), this repo is still actively changing
+and hasn't earned a 1.0 claim yet. See `06-release-notes.md` for the
+per-version changelog this file's "Shipped" sections are summarized from.
 
-## Now / next (fix before building more on top)
+The root `README.md`'s 5-phase roadmap (Production RAG Workflow →
+Intelligence Layer → Advanced Retrieval → Enterprise Features → Agentic
+Intelligence) is the long-arc framing; the versions below are how that
+actually gets delivered incrementally.
 
-- [x] **Repoint `FAISS_INDEX_PATH` at a real, current index** — fixed
-      2026-07-24. Turned out the "obvious" fix (point at the newer-looking
-      `vectorstore/` build) would have made things worse — that build had
-      the exact pre-fix chunking/metadata bugs `ingestion_fixed` was written
-      to fix. Rebuilt with the current `ingestion_fixed` pipeline instead.
-      Full story in §8 of `DOCUMENTATION.md`.
-- [x] **Commit the uncommitted `src/ingestion` deletion** — done in
-      `aa19c6c` (2026-07-24).
-- [x] **Pin `langgraph` in `requirements.txt`** — pinned to `0.2.76`
-      (2026-07-24); `>=0.3` conflicts with the rest of the `langchain-*`
-      stack (`langchain-core<1.0.0` required by every other pin here).
-- [ ] **Reconcile `RAGState`'s `retrieved_documents`/`reranked_documents`
-      fields with what `retrieve_context.py` actually writes (`documents`)**
-      — harmless today since nothing downstream reads the declared keys, but
-      it means the state contract doesn't describe reality.
-- [x] **Fixed a `StateGraph` node/state-key naming collision** discovered
-      2026-07-24 while actually running the workflow for the first time in
-      this dev environment (`langgraph` had never been installed here
-      before — see the `langgraph` pin item above). The graph node named
-      `"intent"` collided with `RAGState`'s `intent` field, which the
-      installed `langgraph` version rejects outright at graph-build time.
-      Renamed the node id to `"detect_intent"` in `workflow.py`; the state
-      field and everything reading `state["intent"]` is untouched. Worth
-      flagging: this means the current LangGraph workflow may not have been
-      successfully executed end-to-end in *any* environment before this —
-      worth double-checking whatever environment was previously used to
-      generate the `src/evaluation/results/*.csv` files actually had a
-      compatible `langgraph` version, not a coincidentally-different one.
+---
 
-## Intelligence layer (README Phase 2 — in progress)
+## v0.0.1 — Stable baseline (2026-07-24)
 
-- [x] Query rewriting — `QueryRewriter` / `process_query` node, landed
-      alongside the (now-removed) modular ingestion pipeline in `5e12446`.
-- [ ] Metadata-aware retrieval (filter by `document_type`, source, etc. —
-      the ingestion side already attaches this metadata per chunk; nothing
-      here queries on it yet).
+First tagged version. Everything here was broken, missing, or undocumented
+before this session; all of it is now fixed and covered by tests.
+
+**Shipped:**
+- Fixed the stale FAISS index (was serving from a May-era build; the
+  newer-looking alternative was actually worse — pre-fix chunking/metadata
+  bugs). Rebuilt with the current `ingestion_fixed` pipeline.
+  `FAISS_PATH` is now configurable via `FAISS_INDEX_PATH` instead of
+  hardcoded.
+- Per-session conversation memory, plus a much bigger bug found in the
+  process: `chat_history` was hardcoded to `""` on every call and never
+  actually populated from memory — conversation context had **zero
+  effect** on behavior, in any session configuration, before this fix.
+- Fixed a `StateGraph` node/state-key collision (`"intent"` used as both a
+  node id and a state field) that made the graph fail to *build* under the
+  `langgraph` version actually installed here — first time this workflow
+  had been run end-to-end in this dev environment.
+- Standalone FastAPI service (`src/api.py`) with `X-API-Key` auth,
+  deployable alongside `ingestion_fixed`'s own API over a shared FAISS
+  volume (see the top-level `docker-compose.yml`).
+- Removed the in-tree ingestion pipeline for good (`aa19c6c`) — superseded
+  by the standalone `ingestion_fixed` project.
+- Full pytest suite: 57 tests — all 5 guardrail validators, the chain's
+  ordering/short-circuit behavior, and all 7 workflow nodes, with fake
+  LLM/retriever (no real network calls).
+- Fixed a real security gap found while writing those tests: whitespace
+  padding inside a blocked phrase (`"ignore   previous   instructions"`)
+  was bypassing prompt-injection detection entirely.
+- Full documentation set: `DOCUMENTATION.md` + numbered `docs/`
+  (architecture, RAG-specific best practices, development guide,
+  contributing, roadmap, release notes, design decisions).
+
+**Known limitations carried into v0.1.0+** (not blockers for calling this
+a stable baseline, just not yet done):
+- `RAGState`'s `retrieved_documents`/`reranked_documents` fields are
+  declared but never written — `retrieve_context.py` writes `documents`
+  instead. Harmless (nothing reads the declared keys) but the state
+  contract doesn't describe reality.
+- Session memory has no persistence or eviction/TTL — an in-memory dict,
+  fine for moderate traffic, not for long-running high-volume use.
+- No rate limiting on the API.
+- `openai` is listed in `requirements.txt` but nothing uses it (Groq via
+  `langchain-groq` is the actual provider).
+
+---
+
+## v0.1.0 — Presentation & correctness polish (planned)
+
+Small, high-leverage fixes to make what's already true legible — not new
+features.
+
+- [ ] A real example conversation/transcript in the README, so someone
+      evaluating this repo can see guardrails/intent/retrieval actually
+      working without standing up the whole stack themselves.
+- [ ] Reconcile `RAGState`'s `retrieved_documents`/`reranked_documents`
+      vs. what `retrieve_context.py` actually writes (`documents`).
+- [ ] Remove the unused `openai` dependency (or document why it's kept).
+
+## v0.2.0 — Intelligence layer (README Phase 2)
+
+- [ ] Metadata-aware retrieval — filter by `document_type`, source, etc.
+      The ingestion side already attaches this metadata per chunk;
+      nothing here queries on it yet.
 - [ ] Reranking after initial FAISS retrieval.
 - [ ] Better chunk selection / dedup at the `retrieve` node.
 
-## Advanced retrieval (README Phase 3)
+(Query rewriting — `QueryRewriter` / `process_query` — already shipped,
+landed in commit `5e12446`.)
+
+## v0.3.0 — Advanced retrieval (README Phase 3)
 
 - [ ] Hybrid search (BM25 + dense).
 - [ ] Parent-child retrieval, context compression.
 
-## Multi-user / production readiness (not in README's phases, found during API work)
+## v0.4.0 — Multi-user & production hardening
 
-- [x] **Per-session conversation memory** — fixed 2026-07-24.
-      `RAGService` now keys memory by `session_id`; the memory object flows
-      through `RAGState["session_memory"]`, not `resources`, so concurrent
-      requests for different sessions can't race on the same object. While
-      fixing this, found and fixed a bigger, previously-hidden bug:
-      `chat_history` was hardcoded to `""` on every call and never actually
-      populated from memory, so conversation context had **zero effect** on
-      query rewriting or generation regardless of session scoping. See §12
-      of `DOCUMENTATION.md`. Still not a complete answer for real
-      production scale: the session store is an in-memory dict, no
-      persistence, no eviction/TTL — fine for moderate traffic, not for
-      long-running high-volume multi-user use.
-- [x] **Basic auth on `POST /query`, `/reload`, `/reset-memory`** (and on
-      `ingestion_fixed`'s `POST /ingest`, since it shares a vector store with
-      this API) — fixed 2026-07-24. Single shared-secret `X-API-Key` header
-      checked against `RAG_API_KEY`/`INGESTION_API_KEY` env vars
-      (`src/utils/auth.py`). Deliberately minimal: no per-client identity,
-      no key rotation, **no rate limiting** — rate limiting is still
-      outstanding and worth adding before any real external exposure.
+- [ ] Persistent, bounded session memory (replace the in-memory dict; cap
+      or summarize long conversations).
+- [ ] Rate limiting on the API.
 - [ ] Auto-trigger `/reload` from the ingestion side after a successful
       `/ingest`, instead of requiring a manual call (see the shared
       `docker-compose.yml`'s comments — deliberately not built yet).
 - [ ] Make `RAGService` tolerate "no index yet" at startup instead of
-      crash-looping against an empty shared volume (see
-      `docker-compose.yml` "BOOTSTRAP ORDER MATTERS" note).
+      crash-looping against an empty shared volume.
 
-## Enterprise features (README Phase 4)
+## v0.5.0 — Enterprise features (README Phase 4)
 
 - [ ] Source citations in generated answers.
 - [ ] Streaming responses.
-- [ ] Observability / metrics dashboard beyond the current structured logs
-      and evaluation CSVs.
+- [ ] Observability / metrics dashboard beyond structured logs and
+      evaluation CSVs.
+- [ ] Expanded guardrails: PII detection, toxicity detection, language
+      detection, sensitive-info detection, role validation (current chain
+      is empty/length/character/prompt-injection/normalization only).
 
-## Testing
+## Unscheduled
 
-- [x] **Unit tests for the guardrail validators** — added 2026-07-24,
-      `tests/test_guardrail_validators.py` (per-validator) and
-      `tests/test_input_guardrail.py` (chain ordering/short-circuit
-      behavior), 22 passing + 1 intentional `xfail`. First `tests/` +
-      `pyproject.toml`/pytest config this repo has ever had.
-- [x] **Unit tests for individual workflow nodes** — added 2026-07-24.
-      All 7 nodes covered (`intent`, `retrieve_context`, `generate_knowledge`,
-      `generate_conversation`, `process_query`, `update_memory`,
-      `input_guardrail`/`guardrail_response`), 56 tests total (with the
-      guardrail-layer tests). `tests/conftest.py` provides `FakeLLM`/
-      `FakeRetriever` (record calls, return scripted responses, no real
-      network/FAISS call) and an autouse fixture resetting the
-      `QueryRewriter` singleton between tests (it caches itself on the
-      class, so tests would otherwise leak a stale `FakeLLM` into later
-      ones). `update_memory` tests use the real `InMemoryChatMessageHistory`
-      rather than a fake, since it's a plain in-process object with
-      nothing worth mocking. Found and pinned down a real asymmetry while
-      writing `test_node_generate_conversation.py`: on a JSON-parse
-      failure, the node falls back to the original, un-stripped
-      `response.content` rather than the fence-stripped `content` it just
-      computed — cosmetic today, but now a change there won't happen
-      silently.
-      `src/evaluation/runner.py` remains the only thing exercising the
-      *compiled graph* end to end; these are unit-level, not a replacement.
-- [x] **Fix the whitespace-based prompt-injection bypass** — fixed
-      2026-07-24. `PromptInjectionValidator` now matches against a
-      whitespace-collapsed copy of the query internally (chain order and
-      `state["query"]` itself untouched) instead of the raw query, so
-      `"ignore   previous   instructions"` (extra internal spaces) is
-      caught like the single-spaced form. The `xfail` in
-      `test_guardrail_validators.py` is gone — it's now a normal,
-      permanently-passing assertion. See `07-design-decisions.md`.
-
-## Guardrails (README's own "Future Guardrails" list, unchanged)
-
-- [ ] PII detection, toxicity detection, language detection, sensitive-info
-      detection, role validation — none implemented yet; current guardrail
-      chain is empty/length/character/prompt-injection/normalization only.
-
-## Cleanup
-
-- [ ] `openai` is listed in `requirements.txt` but no active code path uses
-      it (Groq via `langchain-groq` is the actual LLM provider) — remove it
-      unless there's a near-term plan to use it, to stop it looking like a
-      real dependency.
+- [ ] CI (GitHub Actions): run `pytest tests/ -v` on every push.
+- [ ] Agentic Intelligence (README Phase 5) — multi-agent, tool calling,
+      web search. Deliberately not scheduled into a version yet; too far
+      out to commit to a shape.

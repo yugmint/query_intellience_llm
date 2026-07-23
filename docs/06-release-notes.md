@@ -1,58 +1,67 @@
 # 06 — Release Notes
 
-No git tags exist yet (see `04-contributing.md`'s Git hygiene section). Organized by commit
-and grouped into the same phases as §10 of `DOCUMENTATION.md`. Once a phase
-boundary is tagged, switch this file to standard
-[Keep a Changelog](https://keepachangelog.com/) format anchored on tags.
+[Keep a Changelog](https://keepachangelog.com/)-style, anchored on tags.
+`v0.0.1` is the first tag this repo has — everything before it is
+reconstructed from `git log` and grouped into the same phases as §10 of
+`DOCUMENTATION.md`, without version numbers of its own (it was never
+tagged at the time).
 
-## Unreleased (working tree, not yet committed)
+## [0.0.1] — 2026-07-24
 
-**Prod-readiness pass (2026-07-24)** — a direct answer to "is this
-prod-level yet" (no) turned into four fixes, two of which uncovered bigger
-pre-existing bugs than expected:
+First tagged version — a direct answer to "is this prod-level yet" (no)
+turned into a full stabilization pass. Commits `cd018dc` through the tag,
+on top of `aa19c6c` below.
 
-- **Fixed the stale-index problem for real, not just cosmetically.**
-  Rebuilt the FAISS index with the current `ingestion_fixed` pipeline
-  rather than repointing at the newer-looking `vectorstore/` build, which
-  turned out to have the exact pre-fix chunking/metadata bugs
-  `ingestion_fixed` exists to fix (confirmed by direct `index.pkl`
-  inspection: avg 64-char chunks, `document_type: 'pdf'` everywhere). Old
-  index directories renamed to `*.stale-*` rather than deleted. Full story
-  in §8 of `DOCUMENTATION.md`.
-- **Per-session conversation memory** — `RAGResources` no longer holds
-  `memory`; it's now keyed by `session_id` in `RAGService` and carried
-  through `RAGState["session_memory"]` per request. Uncovered a much bigger
-  bug while fixing this: `chat_history` was hardcoded to `""` on every call
-  and never actually populated from memory — conversation context had
-  **zero effect** on behavior before this fix, in any session configuration.
+**Fixed:**
+- The stale-index problem, for real, not just cosmetically. Rebuilt the
+  FAISS index with the current `ingestion_fixed` pipeline rather than
+  repointing at the newer-looking `vectorstore/` build, which turned out
+  to have the exact pre-fix chunking/metadata bugs `ingestion_fixed`
+  exists to fix (confirmed by direct `index.pkl` inspection: avg 64-char
+  chunks, `document_type: 'pdf'` everywhere). Old index directories
+  renamed aside for comparison, then deleted once verified. Full story in
+  §8 of `DOCUMENTATION.md`. (`cd018dc`)
+- Per-session conversation memory — `RAGResources` no longer holds
+  `memory`; it's keyed by `session_id` in `RAGService` and carried through
+  `RAGState["session_memory"]` per request. Uncovered a much bigger bug in
+  the process: `chat_history` was hardcoded to `""` on every call and
+  never actually populated from memory — conversation context had **zero
+  effect** on behavior before this fix, in any session configuration.
   `src/utils/chat_history.py::format_chat_history` existed but was never
-  called from the live workflow. Verified fixed end-to-end. See §12 of
-  `DOCUMENTATION.md`.
-- **Basic API key auth** on `/query`, `/reload`, `/reset-memory` (and
-  `ingestion_fixed`'s `/ingest`) — `X-API-Key` header against
-  `RAG_API_KEY`/`INGESTION_API_KEY`. Minimal (no rotation, no rate
-  limiting) but real; verified 401 without/with-wrong key, 200 with the
-  right one.
-- **Fixed a `StateGraph` node/state-key collision** (`"intent"` used as
-  both a node id and a state field) that made the graph fail to even
-  *build* under the `langgraph` version actually installed here — see
-  `05-roadmap.md` for why this suggests the workflow may never have run
-  successfully in this exact dependency configuration before.
+  called from the live workflow. Verified fixed end-to-end. (`0eeae75`)
+- A `StateGraph` node/state-key collision (`"intent"` used as both a node
+  id and a state field) that made the graph fail to even *build* under
+  the `langgraph` version actually installed here — first time this
+  workflow had run end-to-end in this dev environment. (`0eeae75`)
+- A whitespace-based prompt-injection detection bypass: extra internal
+  spaces in a blocked phrase (`"ignore   previous   instructions"`) evaded
+  every pattern, since `PromptInjectionValidator` ran before
+  `QueryNormalizer` in the chain. Fixed by matching a whitespace-collapsed
+  copy internally, without reordering the chain. (`86aeb21`)
+
+**Added:**
+- Standalone FastAPI service (`src/api.py`): `GET /health`, `POST /query`
+  (with `session_id`), `POST /reload` (in-place FAISS reload, no restart),
+  `POST /reset-memory` — all but `/health` behind `X-API-Key` auth
+  (`RAG_API_KEY`). Deployable alongside `ingestion_fixed`'s own API over a
+  shared FAISS volume (`docker-compose.yml`). (`1e482e4`)
+- `Dockerfile` (none existed before). (`1e482e4`)
+- Full pytest suite: 57 tests — all 5 guardrail validators, the chain's
+  ordering/short-circuit behavior, and all 7 workflow nodes, with fake
+  LLM/retriever (`tests/conftest.py`) and no real network calls.
+  (`79b40bd`)
+- Full documentation set: `DOCUMENTATION.md` + numbered `docs/`.
+  (`42d4200`)
+
+**Changed:**
+- `src/retrieval/config.py`'s `FAISS_PATH` reads `FAISS_INDEX_PATH` env
+  var instead of being hardcoded. (`cd018dc`)
+- `src/retrieval/llm.py`'s `LLMFactory` accepts `GROQ_API_KEY` from the
+  environment directly, without requiring `cred.json`. (`1e482e4`)
 - `requirements.txt` — `langgraph` pinned to `0.2.76` (previously
-  unpinned/missing; `>=0.3` conflicts with this project's `langchain-core`
-  pin); `fastapi`/`uvicorn` corrected to the versions actually verified
-  working (`0.139.2`/`0.51.0`).
-- `src/api.py` — FastAPI service (`GET /health`, `POST /query`,
-  `POST /reload`, `POST /reset-memory`), now with auth + session support.
-- `RAGService.reload_index()` — in-place FAISS reload without a process
-  restart.
-- `src/retrieval/config.py` — `FAISS_PATH` now reads `FAISS_INDEX_PATH` env
-  var instead of being hardcoded.
-- `src/retrieval/llm.py` — `LLMFactory` now accepts `GROQ_API_KEY` from the
-  environment directly, without requiring `cred.json` (needed for
-  container deployment — `cred.json` is gitignored and holds a secret).
-- `Dockerfile` — new (none existed before).
-- `DOCUMENTATION.md`, `docs/` — this documentation set.
+  unpinned/missing entirely; `>=0.3` conflicts with this project's
+  `langchain-core` pin); `fastapi`/`uvicorn` corrected to the versions
+  actually verified working (`0.139.2`/`0.51.0`). (`1e482e4`)
 
 ## `aa19c6c` (2026-07-24) — Remove in-tree ingestion pipeline
 

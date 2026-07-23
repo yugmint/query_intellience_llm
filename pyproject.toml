@@ -1,3 +1,9 @@
+[project]
+name = "intelligent-document-ai"
+version = "0.0.1"
+description = "LangGraph-orchestrated RAG chatbot: guardrails -> intent -> retrieval -> generation -> memory."
+requires-python = ">=3.10"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
