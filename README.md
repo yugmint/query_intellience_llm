@@ -26,6 +26,31 @@ The long-term goal is to evolve this project into a complete enterprise-grade Do
 
 ---
 
+# Documentation
+
+This README covers the feature list and roadmap. For the technical detail:
+
+- [`DOCUMENTATION.md`](DOCUMENTATION.md) — full architecture and
+  module-by-module reference, including the history of the ingestion
+  pipeline that used to live in this repo.
+- [`docs/`](docs/) — deeper-dive docs: [architecture](docs/01-architecture.md),
+  [RAG best practices](docs/02-rag-best-practices.md),
+  [development guide](docs/03-development-guide.md),
+  [contributing](docs/04-contributing.md), [roadmap](docs/05-roadmap.md),
+  [release notes](docs/06-release-notes.md),
+  [design decisions](docs/07-design-decisions.md).
+
+This project pairs with a separate ingestion project
+(`ingestion_fixed`, a sibling repo) that builds the FAISS index this
+project reads from — see `docs/01-architecture.md` for how the two
+connect, and `DOCUMENTATION.md` §8 for why ingestion no longer lives here.
+
+**Status:** this repo is still pre-MVP and under active development —
+unlike `ingestion_fixed`, which is considered stable. See `docs/05-roadmap.md`
+for the concrete, current gap list.
+
+---
+
 # Features
 
 ## Current Features
@@ -130,6 +155,8 @@ The long-term goal is to evolve this project into a complete enterprise-grade Do
 
 ```text
 src/
+│
+├── api.py                 # standalone FastAPI service (POST /query, /reload)
 │
 ├── evaluation/
 │   ├── dataset/
@@ -433,6 +460,38 @@ python main.py
 ```
 
 ---
+
+## Run as a Standalone API
+
+For deployment alongside `ingestion_fixed`'s own API, sharing one FAISS
+index via a mounted volume (see the top-level `docker-compose.yml`, one
+directory up):
+
+```bash
+RAG_API_KEY=your-shared-secret uvicorn src.api:app --reload --port 8001
+curl -X POST http://localhost:8001/query -H "Content-Type: application/json" \
+     -H "X-API-Key: your-shared-secret" \
+     -d '{"query": "your question here", "session_id": "optional-per-user-id"}'
+```
+
+`RAG_API_KEY` is optional for local dev (omit it and the API runs
+unauthenticated with a warning) but required before exposing this beyond
+localhost. `session_id` is optional too — omit it to use one shared
+conversation, or pass a distinct id per user/session to keep conversations
+isolated.
+
+See `docs/01-architecture.md` and `DOCUMENTATION.md` §12 for details,
+including the `/reload` endpoint and a known bootstrap-order gotcha.
+
+---
+
+## Run Tests
+
+```bash
+pytest tests/ -v
+```
+
+Currently covers the guardrail validator chain; see `docs/03-development-guide.md`.
 
 ## Run Evaluation
 

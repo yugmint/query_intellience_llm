@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 380" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#444"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="380" fill="#ffffff"/>
+  <text x="10" y="20" font-size="15" font-weight="700" fill="#1a1a1a">RAG_Project_1 — LangGraph workflow</text>
+
+  <!-- START / END circles -->
+  <circle cx="40" cy="60" r="22" fill="#f3f3f3" stroke="#666" stroke-width="1.5"/>
+  <text x="40" y="65" text-anchor="middle" font-size="11" font-weight="700">START</text>
+
+  <circle cx="180" cy="340" r="22" fill="#f3f3f3" stroke="#666" stroke-width="1.5"/>
+  <text x="180" y="345" text-anchor="middle" font-size="12" font-weight="700">END</text>
+
+  <circle cx="860" cy="340" r="22" fill="#f3f3f3" stroke="#666" stroke-width="1.5"/>
+  <text x="860" y="345" text-anchor="middle" font-size="12" font-weight="700">END</text>
+
+  <!-- Top row nodes -->
+  <g font-size="12" fill="#1a1a1a">
+    <rect x="110" y="35" width="140" height="50" rx="8" fill="#fdf1e0" stroke="#c98a2b" stroke-width="1.5"/>
+    <text x="180" y="65" text-anchor="middle" font-weight="700">input_guardrail</text>
+
+    <rect x="280" y="35" width="140" height="50" rx="8" fill="#fdf1e0" stroke="#c98a2b" stroke-width="1.5"/>
+    <text x="350" y="65" text-anchor="middle" font-weight="700">intent</text>
+
+    <rect x="450" y="35" width="140" height="50" rx="8" fill="#e8f0fe" stroke="#4a78c2" stroke-width="1.5"/>
+    <text x="520" y="60" text-anchor="middle" font-weight="700">process_query</text>
+    <text x="520" y="75" text-anchor="middle" font-size="10" fill="#3a3a3a">(knowledge only)</text>
+
+    <rect x="620" y="35" width="140" height="50" rx="8" fill="#e8f0fe" stroke="#4a78c2" stroke-width="1.5"/>
+    <text x="690" y="65" text-anchor="middle" font-weight="700">retrieve</text>
+
+    <rect x="790" y="35" width="140" height="50" rx="8" fill="#e6f4ea" stroke="#3a8a55" stroke-width="1.5"/>
+    <text x="860" y="65" text-anchor="middle" font-weight="700">generate</text>
+
+    <!-- Bottom row nodes -->
+    <rect x="110" y="220" width="140" height="50" rx="8" fill="#fbe4e4" stroke="#b23a3a" stroke-width="1.5"/>
+    <text x="180" y="250" text-anchor="middle" font-weight="700">guardrail_response</text>
+
+    <rect x="280" y="220" width="140" height="50" rx="8" fill="#e6f4ea" stroke="#3a8a55" stroke-width="1.5"/>
+    <text x="350" y="250" text-anchor="middle" font-weight="700">conversation</text>
+
+    <rect x="790" y="220" width="140" height="50" rx="8" fill="#eef2f7" stroke="#8aa0b8" stroke-width="1.5"/>
+    <text x="860" y="250" text-anchor="middle" font-weight="700">memory</text>
+  </g>
+
+  <!-- Arrows -->
+  <g stroke="#444" stroke-width="1.5" marker-end="url(#arrow)" fill="none">
+    <line x1="62" y1="60" x2="106" y2="60"/>
+    <line x1="180" y1="87" x2="180" y2="216"/>
+    <line x1="250" y1="60" x2="276" y2="60"/>
+    <line x1="350" y1="87" x2="350" y2="216"/>
+    <line x1="420" y1="60" x2="446" y2="60"/>
+    <line x1="590" y1="60" x2="616" y2="60"/>
+    <line x1="760" y1="60" x2="786" y2="60"/>
+    <line x1="860" y1="87" x2="860" y2="216"/>
+    <line x1="420" y1="245" x2="786" y2="245"/>
+    <line x1="180" y1="272" x2="180" y2="316"/>
+    <line x1="860" y1="272" x2="860" y2="316"/>
+  </g>
+
+  <!-- Edge labels -->
+  <g font-size="10" fill="#555">
+    <text x="186" y="155" text-anchor="start">reject</text>
+    <text x="255" y="50" text-anchor="start">continue</text>
+    <text x="356" y="155" text-anchor="start">conversation</text>
+    <text x="425" y="50" text-anchor="start">knowledge</text>
+  </g>
+
+  <text x="10" y="370" font-size="10" fill="#777">Boxes colored by role: guardrail/routing (amber), knowledge path (blue), generation/output (green), rejection (red), memory (grey).</text>
+</svg>
