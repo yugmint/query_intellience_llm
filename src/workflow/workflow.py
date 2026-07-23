@@ -68,7 +68,7 @@ def build_workflow(resources: RAGResources):
     )
 
     builder.add_node(
-        "intent",
+        "detect_intent",
         lambda state: detect_intent(
             state, 
             resources
@@ -108,13 +108,13 @@ def build_workflow(resources: RAGResources):
     "input_guardrail",
     route_guardrail,
         {
-            "continue": "intent",
+            "continue": "detect_intent",
             "reject": "guardrail_response",
         },
     )
 
     builder.add_conditional_edges(
-        "intent",
+        "detect_intent",
         route_by_intent,
         {
             "knowledge": "process_query",

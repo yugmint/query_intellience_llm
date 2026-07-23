@@ -17,20 +17,22 @@ def update_memory(
 
     query = state["query"]
     answer = state["answer"]
+    memory = state["session_memory"]
 
     # ------------------------
     # Execute
     # ------------------------
 
-    resources.memory.add_user_message(query)
-    resources.memory.add_ai_message(answer)
+    memory.add_user_message(query)
+    memory.add_ai_message(answer)
 
     # ------------------------
     # Metrics
     # ------------------------
 
     logger.info(
-        f"Conversation Length : {len(resources.memory.messages)} messages"
+        f"Conversation Length : {len(memory.messages)} messages "
+        f"(session={state.get('session_id', 'default')})"
     )
 
     # ------------------------
@@ -40,6 +42,6 @@ def update_memory(
     return {
         "metadata": {
             **state.get("metadata", {}),
-            "conversation_length": len(resources.memory.messages),
+            "conversation_length": len(memory.messages),
         },
     }

@@ -38,6 +38,12 @@ class RAGState(TypedDict):
     # Conversation
     # -------------------------
     chat_history: str
+    session_id: str
+    # The current session's InMemoryChatMessageHistory instance, carried
+    # through state (not resources) so concurrent requests for different
+    # sessions never share or race on the same memory object. Populated
+    # by RAGService.ask(), consumed/written by nodes/update_memory.py.
+    session_memory: Any
 
     # -------------------------
     # Generation

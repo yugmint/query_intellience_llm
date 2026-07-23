@@ -11,16 +11,23 @@ from src.retrieval.vectorstore import VectorStoreFactory
 class RAGResources:
     """
     Shared application resources.
+
+    Deliberately does NOT hold conversation memory -- memory is
+    per-session, not a process-wide singleton like the llm/embeddings/
+    vectorstore/retriever are. Each request carries its own session's
+    memory object through `RAGState["session_memory"]` instead (see
+    RAGService.ask()). Mutating a resource here as a stand-in for
+    "current session" would race under concurrent requests for
+    different sessions.
     """
 
     llm: Any
     embeddings: Any
     vectorstore: Any
     retriever: Any
-    memory: Any
 
 
-def build_resources(memory) -> RAGResources:
+def build_resources() -> RAGResources:
     """
     Build all shared resources once.
     """
@@ -40,5 +47,4 @@ def build_resources(memory) -> RAGResources:
         embeddings=embeddings,
         vectorstore=vectorstore,
         retriever=retriever,
-        memory=memory,
     )

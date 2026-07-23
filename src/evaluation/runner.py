@@ -74,9 +74,14 @@ class EvaluationRunner:
 
             try:
 
-                # Return complete workflow state
+                # Each test case gets its own session so conversation
+                # history from one case never leaks into the next -- this
+                # matters now that RAGState["chat_history"] actually round-
+                # trips through session memory (it previously didn't; see
+                # docs/06-release-notes.md).
                 state = self.rag.ask(
                     query=query,
+                    session_id=f"eval-{idx}-{category}",
                     return_state=True,
                 )
 
