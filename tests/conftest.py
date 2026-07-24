@@ -50,7 +50,29 @@ class FakeRetriever:
         return self._documents
 
 
-def make_resources(llm=None, retriever=None) -> RAGResources:
+class FakeReranker:
+    """
+    Stand-in for resources.reranker (a sentence_transformers.CrossEncoder
+    in production). Records every batch of (query, chunk) pairs it's
+    asked to score and returns scripted scores -- one list of scores per
+    call to .predict(), matching CrossEncoder's real signature/return
+    shape (a list of floats, same order as the input pairs).
+    """
+
+    def __init__(self, scores):
+        self._scores = list(scores) if isinstance(scores[0], (list, tuple)) else [scores]
+        self.calls: list[list[tuple[str, str]]] = []
+        self.call_count = 0
+
+    def predict(self, pairs):
+        self.calls.append(list(pairs))
+        index = min(self.call_count, len(self._scores) - 1)
+        scores = self._scores[index]
+        self.call_count += 1
+        return scores
+
+
+def make_resources(llm=None, retriever=None, reranker=None) -> RAGResources:
     """
     Build a RAGResources with only the fields a given node actually uses
     populated -- the rest are None, which is fine since nothing in these
@@ -61,6 +83,7 @@ def make_resources(llm=None, retriever=None) -> RAGResources:
         embeddings=None,
         vectorstore=None,
         retriever=retriever,
+        reranker=reranker,
     )
 
 

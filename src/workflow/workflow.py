@@ -5,6 +5,7 @@ from src.workflow.resources import RAGResources
 
 from src.workflow.nodes.intent import detect_intent
 from src.workflow.nodes.retrieve_context import retrieve_documents
+from src.workflow.nodes.rerank import rerank_documents
 from src.workflow.nodes.generate_knowledge import generate_knowledge_response
 from src.workflow.nodes.generate_conversation import generate_conversation
 from src.workflow.nodes.update_memory import update_memory
@@ -81,6 +82,11 @@ def build_workflow(resources: RAGResources):
     )
 
     builder.add_node(
+        "rerank",
+        lambda state: rerank_documents(state, resources),
+    )
+
+    builder.add_node(
         "generate",
         lambda state: generate_knowledge_response(state, resources),
     )
@@ -124,12 +130,17 @@ def build_workflow(resources: RAGResources):
 
     # Knowledge Branch
     builder.add_edge(
-        "process_query", 
+        "process_query",
         "retrieve"
         )
-    
+
     builder.add_edge(
-        "retrieve", 
+        "retrieve",
+        "rerank"
+        )
+
+    builder.add_edge(
+        "rerank",
         "generate"
         )
     

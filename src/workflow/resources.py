@@ -3,6 +3,7 @@ from typing import Any
 
 from src.retrieval.embeddings import EmbeddingFactory
 from src.retrieval.llm import LLMFactory
+from src.retrieval.reranker import RerankerFactory
 from src.retrieval.retriever import RetrieverFactory
 from src.retrieval.vectorstore import VectorStoreFactory
 
@@ -14,9 +15,9 @@ class RAGResources:
 
     Deliberately does NOT hold conversation memory -- memory is
     per-session, not a process-wide singleton like the llm/embeddings/
-    vectorstore/retriever are. Each request carries its own session's
-    memory object through `RAGState["session_memory"]` instead (see
-    RAGService.ask()). Mutating a resource here as a stand-in for
+    vectorstore/retriever/reranker are. Each request carries its own
+    session's memory object through `RAGState["session_memory"]` instead
+    (see RAGService.ask()). Mutating a resource here as a stand-in for
     "current session" would race under concurrent requests for
     different sessions.
     """
@@ -25,6 +26,7 @@ class RAGResources:
     embeddings: Any
     vectorstore: Any
     retriever: Any
+    reranker: Any
 
 
 def build_resources() -> RAGResources:
@@ -40,6 +42,8 @@ def build_resources() -> RAGResources:
 
     retriever = RetrieverFactory.build(vectorstore)
 
+    reranker = RerankerFactory.get()
+
     llm = LLMFactory.get()
 
     return RAGResources(
@@ -47,4 +51,5 @@ def build_resources() -> RAGResources:
         embeddings=embeddings,
         vectorstore=vectorstore,
         retriever=retriever,
+        reranker=reranker,
     )
