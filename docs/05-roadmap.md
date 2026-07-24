@@ -85,8 +85,12 @@ features. All three shipped in the same session as `v0.0.1`.
       6/10 fully correct, with both failures caused by `k=3` top-k
       retrieval returning zero-diversity results (one question's top-3
       were all from the same page) that crowded out the actually relevant
-      chunks. Concrete evidence these two roadmap items are correctly
-      prioritized.
+      chunks. The report's §5 ruled out a competing explanation (chunk
+      size from a document misclassification) via a controlled rerun —
+      the same two questions failed identically with much smaller,
+      more granular chunks — which narrows the cause down to the
+      retrieval/ranking layer specifically, strengthening the case for
+      these two items over a chunking-side fix.
 
 (Query rewriting — `QueryRewriter` / `process_query` — already shipped,
 landed in commit `5e12446`.)

@@ -14,11 +14,14 @@ Sourced from the `rag_test_files/` folders already sitting in both repos
 (untracked, never previously run through either pipeline).
 
 **Method:** everything below is real, captured output — no numbers are
-estimated or hand-written. The index used is a dedicated, isolated one
-(`local/test_reports/factor_analysis_index/`, gitignored), separate from the
-production index the README's "Proof It Works" section and the running app
-use, so this test doesn't disturb either. Reproduction commands are included
-per section.
+estimated or hand-written. Two dedicated, isolated indexes were used
+(`local/test_reports/factor_analysis_index/` and, for the §5 follow-up,
+`..._research_paper/`, both gitignored), separate from the production index
+the README's "Proof It Works" section and the running app use, so this
+test doesn't disturb either. Reproduction commands are included per
+section. **Update:** §1's original hypothesis about *why* Q6/Q7 failed was
+tested directly in §5 and turned out to be wrong — see there before reading
+§1/§4 as settled conclusions.
 
 ---
 
@@ -64,20 +67,26 @@ fires the instant the literal word `"chapter"` appears anywhere in the
 first 5 pages — and page 1 opens with `"Chapter 420"`. One keyword, checked
 in a fixed priority order, decided the classification.
 
-**This plausibly cascades into a real quality problem, not just a label.**
-`book`'s chunking profile (`_BASE_PROFILES`) is `chunk_size=800,
-split_large_chunks=False`; `research_paper`'s is `chunk_size=450,
-split_large_chunks=True`. A denser, citation-and-formula-heavy technical
-document plausibly needed the smaller, more aggressively-split profile —
-see §3 for retrieval failures that are consistent with chunks being too
-coarse to isolate specific facts.
+**Tested as a possible cause of the retrieval failures in §3 — refuted, not
+confirmed.** The original version of this report speculated that `book`'s
+coarser chunking profile (`chunk_size=800, split_large_chunks=False` vs.
+`research_paper`'s `450`/`True`) plausibly diluted the pinpoint facts Q6/Q7
+needed. That was a hypothesis, stated as one, and it turned out to be
+wrong — §6 reruns the exact same questions against a controlled variant of
+this document forced to classify as `research_paper`, and the same two
+questions fail the same way regardless of chunk size. Read §6 before
+treating the paragraph above as settled; it isn't. The misclassification
+itself is still real and still worth fixing (see recommendation below and
+§5) — it's just not the explanation for Q6/Q7.
 
 **Recommendation for `ingestion_fixed`'s roadmap:** the `chapter` keyword
 check is too blunt on its own. Corroborate it against `layout.has_equations`
 / `layout.has_tables` (both already computed, already available) before
 committing to `book` — a chapter-numbered document that's *also*
 equation/table-dense reads more like a technical reference than a
-narrative book. Not fixed as part of this report (see §5).
+narrative book. Worth fixing for classification correctness and
+predictability on its own merits, independent of §6's finding. Not fixed
+as part of this report (see §5).
 
 ## 2. Ingestion — chunk & embedding quality
 
@@ -210,14 +219,20 @@ surfacing the right answer even probabilistically.
 This is exactly the failure mode `RAG_Project_1`'s own roadmap already
 names for `v0.2.0`: **reranking** and **better chunk selection/dedup at the
 `retrieve` node** — plain top-k similarity search with `k=3` and no
-relevance threshold or diversity constraint. This report is real evidence
-those items are correctly prioritized, not speculative nice-to-haves.
+relevance threshold or diversity constraint. §6 confirms this directly:
+forcing smaller, more granular chunks (the `research_paper` profile) did
+**not** fix Q6/Q7 — the same two questions failed the same way regardless
+of chunk size, which points at the retrieval/ranking layer as the actual
+cause, not chunk granularity. This report is real evidence the reranking
+and dedup items are correctly prioritized, not speculative nice-to-haves.
 
-**The `"book"` misclassification (§1) is the most actionable single
-finding.** It's precisely explained (one keyword, fixed priority order),
-plausibly a contributing cause of Q6/Q7 (coarser 800-char chunks vs. the
-450-char + force-split profile `research_paper` would have gotten), and
-narrowly fixable — see §5.
+**The `"book"` misclassification (§1) is real and worth fixing, but §6
+shows it is *not* the cause of Q6/Q7.** It's precisely explained (one
+keyword, fixed priority order) and narrowly fixable — see §5 — but its
+value is classification correctness/predictability on its own terms, not
+as a fix for the retrieval failures in this report. Keeping the original
+(wrong) hypothesis crossed out rather than deleted, in §1, so the
+correction is visible.
 
 **Compared to the existing fiction-book baseline** (README "Proof It
 Works"): that test exercised intent routing, session memory, and guardrails
@@ -227,15 +242,74 @@ citation/fact lookup against dense technical content — and it's the first
 time either pipeline's behavior on *retrieval precision under ambiguity*
 has been measured with real pass/fail numbers instead of a single anecdote.
 
-## 5. Recommendations (mapped to existing roadmap items where possible)
+## 5. Follow-up — testing the chunking-size hypothesis directly (2026-07-24, later same day)
+
+§1/§4's first version claimed the `"book"` misclassification "plausibly"
+caused Q6/Q7 via coarser chunking. That's a correlational claim dressed as
+a finding, and it deserved an actual test rather than staying a hunch —
+this section is that test.
+
+**Method:** rebuilt the same document into a second, isolated index, with
+one deliberate change — after running the real analyzer (which still
+classifies it `book`), the classification and its derived
+`ChunkingRecommendation` were overridden in code to force `research_paper`,
+using the analyzer's own `_recommend_chunking("research_paper", statistics)`
+— same statistics, same document, only the profile differs. Not a config
+flag (none exists for this yet); done directly against the pipeline
+internals for this one-off test.
+
+```
+book profile:           chunk_size=800, split_large_chunks=False -> 54 chunks, avg 727 chars, range 202-959
+research_paper profile: chunk_size=450, split_large_chunks=True  -> 89 chunks, avg 446 chars, range 172-541
+```
+
+Confirmed genuinely different chunking (89 vs. 54 chunks, ~40% smaller on
+average, much narrower range) — a real manipulation, not a no-op. Same 10
+questions, same method, run against this new index.
+
+| # | Question | Book-profile verdict | Research-paper-profile verdict | Changed? |
+|---|---|---|---|---|
+| 1 | What is factor analysis? | ✅ Correct | ✅ Correct (identical answer) | No |
+| 2 | Two rotation methods? | ✅ Correct | ✅ Correct | No |
+| 3 | Kaiser eigenvalue cutoff? | ✅ Correct | ✅ Correct | No |
+| 4 | Jolliffe cutoff? | ✅ Correct | ✅ Correct | No |
+| 5 | PCA vs FA difference? | ⚠️ Partial (garbled clause) | ⚠️ Partial (different wording, still not a direct quote, but cleaner) | Marginal |
+| 6 | Example 1 dataset & variable count? | ❌ "I don't know" (retrieved 8,6,8) | ❌ **Still "I don't know"** (retrieved 10,6,8 — different chunks, same failure) | **No — hypothesis fails here** |
+| 7 | Example 1 factors & rotation? | ❌ "I don't know" (retrieved 3,3,3) | ❌ **Still "I don't know"** (retrieved 3,7,3 — still mostly page 3) | **No — hypothesis fails here** |
+| 8 | Who documented scree graph? | ✅ Correct | ✅ Correct | No |
+| 9 | NCSS method + steps? | ⚠️ Partial (method right, steps missing, mentions rotation) | ⚠️ Partial (method right, steps missing, doesn't mention rotation either — slightly less complete) | Marginal, slightly worse |
+| 10 | Out-of-context (transformers)? | ✅ Correct refusal | ✅ Correct refusal | No |
+
+**Conclusion: the hypothesis is refuted.** Q6 and Q7 — the two questions it
+was supposed to explain — fail identically under both chunking profiles.
+Smaller, more granular, force-split chunks did not surface the right
+content for either question; in both cases the top-3 retrieved pages
+changed slightly but still missed pages 9/12 (where the actual "Example 1"
+answers live) entirely. This rules out chunk granularity as the
+explanation and points more specifically at the retrieval/ranking layer:
+plain `k=3` cosine similarity search apparently can't distinguish "content
+*about* the general concept of factor counting" (page 3) from "the answer
+*for this specific worked example*" (pages 9/12) regardless of how the
+source text is sliced. That's a stronger, more specific justification for
+reranking than the original report had — a reranker (or a cross-encoder
+second pass) is designed to fix exactly this class of problem; a
+chunking-strategy change was never going to.
+
+**Honest caveat on this follow-up itself:** still N=1 document, still the
+same two questions, still manually graded by the same person who wrote
+both the questions and the original hypothesis. It's a real controlled
+comparison, not a large-scale one — treat "refuted" as "refuted for this
+document and these two questions," not as a general law.
+
+## 6. Recommendations (mapped to existing roadmap items where possible)
 
 | Finding | Action | Where it belongs |
 |---|---|---|
-| `"book"` misclassification via a single `"chapter"` keyword | Corroborate against `layout.has_equations`/`has_tables` before committing to `book` over `research_paper` | New — `ingestion_fixed` `v0.2.0` roadmap (classification robustness), not yet listed |
-| Retrieval misses on specific-example questions (Q6/Q7) | Reranking; chunk dedup/diversity at `retrieve` | Already listed — `RAG_Project_1` `v0.2.0` |
+| `"book"` misclassification via a single `"chapter"` keyword | Corroborate against `layout.has_equations`/`has_tables` before committing to `book` over `research_paper`. **Note (§5): tested and confirmed this is *not* the cause of the Q6/Q7 retrieval failures** — worth fixing for classification correctness on its own merits, not as a retrieval fix. | New — `ingestion_fixed` `v0.2.0` roadmap (classification robustness), not yet listed |
+| Retrieval misses on specific-example questions (Q6/Q7), confirmed independent of chunk size (§5) | Reranking; chunk dedup/diversity at `retrieve` — §5's controlled test makes this the primary suspect, not a secondary guess | Already listed — `RAG_Project_1` `v0.2.0` |
 | Formula/equation text extracted as low-signal noise | Equation-aware cleaning or exclusion — `layout.has_equations` is detected but unused downstream | New — `ingestion_fixed` roadmap, adjacent to the existing `TextCleaner` table/header-footer item (`v0.3.0`) |
 | `validate_chunks.py --dump-samples` crashes on non-cp1252 output (Windows) | Force UTF-8 on stdout, or write samples to a file instead of `print()` | New — small, should land in `ingestion_fixed` `v0.1.1` (patch-level fix, no feature change) |
-| Answer occasionally omits retrieved facts even when present (Q9) | Not a retrieval problem this time — the right chunk *was* in context. Possibly a generation-prompt following-instructions gap on multi-part questions ("what method, and what are its steps"). Worth a few more test cases before concluding a fix is needed. | Watch — not enough evidence yet for a specific roadmap item |
+| Answer occasionally omits retrieved facts even when present (Q9) | Not a retrieval problem this time — the right chunk *was* in context under both chunking profiles (§5), and the answer stayed incomplete both times. Possibly a generation-prompt following-instructions gap on multi-part questions ("what method, and what are its steps"). Worth a few more test cases before concluding a fix is needed. | Watch — not enough evidence yet for a specific roadmap item |
 
 None of these are blockers on their own — the 60% fully-correct / 20%
 partial / 20% false-refusal split on a deliberately harder document type is
