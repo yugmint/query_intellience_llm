@@ -91,6 +91,21 @@ features. All three shipped in the same session as `v0.0.1`.
       more granular chunks — which narrows the cause down to the
       retrieval/ranking layer specifically, strengthening the case for
       these two items over a chunking-side fix.
+- [ ] **New, higher-severity finding (2026-07-24):** source-attribution
+      failure — a third test document
+      (`docs/reports/2026-07-24-efficientnet-research-paper-e2e-test.md`,
+      a genuine research paper this time, correctly classified) asked
+      "what is the title of this paper" and got back a **confidently
+      wrong answer**: the title/authors of a paper *cited in the
+      References section*, not the document itself — even though the
+      correct title page was also in the retrieved context. Unlike every
+      other failure in either report, this wasn't a safe "I don't know";
+      the model picked the wrong source out of the ones it had. Nothing
+      in the current pipeline distinguishes "this chunk describes the
+      document" from "this chunk cites someone else." Needs either
+      chunk-level section-role metadata (references vs. body text) or a
+      generation-prompt-level awareness of it — bigger than a reranking
+      fix alone would solve.
 
 (Query rewriting — `QueryRewriter` / `process_query` — already shipped,
 landed in commit `5e12446`.)
