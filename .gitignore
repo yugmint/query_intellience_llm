@@ -76,6 +76,10 @@ reports/
 benchmarks/
 outputs/
 artifacts/
+# ...except deliberately-authored, committed test reports under docs/ --
+# these are real documentation, not disposable generated output.
+!docs/reports/
+!docs/reports/**
 
 # =============================================================================
 # Local Debug & Experimental Scripts

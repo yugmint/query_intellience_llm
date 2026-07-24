@@ -79,7 +79,14 @@ features. All three shipped in the same session as `v0.0.1`.
       The ingestion side already attaches this metadata per chunk;
       nothing here queries on it yet.
 - [ ] Reranking after initial FAISS retrieval.
-- [ ] Better chunk selection / dedup at the `retrieve` node.
+- [ ] Better chunk selection / dedup at the `retrieve` node. **Now backed
+      by real evidence, not just intuition:** `docs/reports/2026-07-24-academic-document-e2e-test.md`
+      found a 10-question Q&A suite against a dense technical PDF scored
+      6/10 fully correct, with both failures caused by `k=3` top-k
+      retrieval returning zero-diversity results (one question's top-3
+      were all from the same page) that crowded out the actually relevant
+      chunks. Concrete evidence these two roadmap items are correctly
+      prioritized.
 
 (Query rewriting — `QueryRewriter` / `process_query` — already shipped,
 landed in commit `5e12446`.)
