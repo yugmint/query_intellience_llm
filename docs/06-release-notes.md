@@ -6,6 +6,43 @@ reconstructed from `git log` and grouped into the same phases as §10 of
 `DOCUMENTATION.md`, without version numbers of its own (it was never
 tagged at the time).
 
+## [0.2.0] — 2026-07-24
+
+Intelligence layer, first item: reranking. First real feature addition
+since the `v0.1.0` stabilization/polish pass — validated against actual,
+previously-diagnosed failures rather than shipped on theory.
+
+**Added:**
+- `src/workflow/nodes/rerank.py` — new `rerank` node between `retrieve`
+  and `generate`. Cross-encoder (`cross-encoder/ms-marco-MiniLM-L-6-v2`,
+  via the already-present `sentence-transformers` dependency) scores
+  `RERANK_CANDIDATES` (15) FAISS candidates against the query and keeps
+  the top `TOP_K` (3) for generation.
+- `src/retrieval/reranker.py` — `RerankerFactory` (singleton, lazy-loads
+  the cross-encoder so importing the module doesn't force the
+  import/download for callers that never rerank).
+- `tests/test_node_rerank.py` + `FakeReranker` in `conftest.py` — 7 new
+  unit tests, no real model load.
+
+**Changed:**
+- `src/retrieval/retriever.py` — `RetrieverFactory` now pulls
+  `RERANK_CANDIDATES` from FAISS instead of `TOP_K`; the `rerank` node is
+  what narrows it back down.
+- `src/workflow/resources.py` — `RAGResources` gained a `reranker` field,
+  built once in `build_resources()` alongside the other shared resources.
+- `src/retrieval/config.py` — added `RERANK_CANDIDATES` (env-overridable,
+  default 15) and `RERANK_MODEL`.
+
+**Validated:**
+- Re-ran the exact questions/indexes from both prior e2e reports with
+  reranking in place: 5 of 6 previously-diagnosed failures fixed outright
+  (both Factor Analysis retrieval misses; 3 of 4 EfficientNet failures).
+  The 6th (a confidently-wrong answer — a References-section citation
+  mistaken for the document's own title) is no longer wrong, though not
+  yet fully correct either — converted to a safe refusal instead. Zero
+  regressions across both full 10-question suites. Full writeup:
+  `docs/reports/2026-07-24-reranking-validation.md`.
+
 ## [0.1.0] — 2026-07-24
 
 Presentation & correctness polish — small, high-leverage fixes to make

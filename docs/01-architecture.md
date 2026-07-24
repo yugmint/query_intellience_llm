@@ -28,7 +28,8 @@ flowchart TD
     IN -->|knowledge| PQ[process_query]
 
     PQ --> RT[retrieve]
-    RT --> GN[generate]
+    RT --> RR[rerank]
+    RR --> GN[generate]
     GN --> MEM[memory]
 
     CV --> MEM
@@ -43,8 +44,9 @@ flowchart TD
 | `guardrail_response` | `nodes/guardrail_response.py` | Build rejection answer, short-circuit to END |
 | `intent` | `nodes/intent.py` | LLM classification → `knowledge` / `greeting` / `chit_chat` |
 | `process_query` | `nodes/process_query.py` | Pronoun-aware query rewrite (knowledge branch only) |
-| `retrieve` | `nodes/retrieve_context.py` | FAISS similarity search, build context string |
-| `generate` | `nodes/generate_knowledge.py` | Grounded answer from context |
+| `retrieve` | `nodes/retrieve_context.py` | FAISS similarity search — pulls `RERANK_CANDIDATES` (15) candidates, not the final count |
+| `rerank` | `nodes/rerank.py` | Cross-encoder scores the 15 candidates against the query, keeps top `TOP_K` (3), rebuilds context |
+| `generate` | `nodes/generate_knowledge.py` | Grounded answer from the reranked context |
 | `conversation` | `nodes/generate_conversation.py` | Greeting/chit-chat answer, no retrieval |
 | `memory` | `nodes/update_memory.py` | Append turn to conversation history |
 
@@ -64,8 +66,10 @@ flowchart LR
 ```
 
 `RAGResources` (`resources.py`) holds `llm`, `embeddings`, `vectorstore`,
-`retriever`, `memory` — built once in `RAGService.__init__`, then closed
-over by every node's lambda in `workflow.py`. This is also what makes
+`retriever`, `reranker` — built once in `RAGService.__init__`, then closed
+over by every node's lambda in `workflow.py`. (Not `memory` — that's
+session-scoped, carried through state instead; see §12 of
+`DOCUMENTATION.md`.) This is also what makes
 `RAGService.reload_index()` work: it's a plain mutable dataclass, so
 swapping `resources.vectorstore`/`resources.retriever` in place is visible
 to the already-compiled graph without rebuilding it. See §12 of
@@ -97,9 +101,14 @@ assuming the workflow logic is wrong.
 
 ## What's explicitly out of scope right now
 
-- Reranking, hybrid/BM25 search, metadata filtering (README Phase 2/3) —
-  `retriever.py` is plain top-k similarity search, `k=3`.
-- Per-session conversation memory — one shared history per process today.
-- Source citations, streaming responses, auth (README Phase 4).
+- Hybrid/BM25 search, metadata filtering (README Phase 2/3). (Reranking
+  shipped 2026-07-24 — see `07-design-decisions.md` and
+  `docs/reports/2026-07-24-reranking-validation.md`.)
+- Chunk-level section-role awareness (references vs. body vs. title) —
+  identity-type questions ("what is this document called") can still
+  fail even with reranking; see the reranking validation report §4.
+- Source citations, streaming responses (README Phase 4). (Auth and
+  per-session memory shipped in `v0.0.1`/`v0.1.0` — see `DOCUMENTATION.md`
+  §12 and `06-release-notes.md`.)
 
 See `05-roadmap.md`.

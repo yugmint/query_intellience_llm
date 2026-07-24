@@ -1,5 +1,10 @@
 # End-to-End Test Report — Academic/Technical Document
 
+> **Update (2026-07-24, later same day):** the Q6/Q7 failures below are
+> **fixed** — reranking was added and both were re-tested and confirmed
+> working. See [2026-07-24-reranking-validation.md](2026-07-24-reranking-validation.md).
+> Left this report's original findings intact below for the record.
+
 **Date:** 2026-07-24
 **Document:** `Factor_Analysis.pdf` (NCSS Statistical Software, Chapter 420 — a 16-page
 technical reference chapter on factor analysis: definitions, math, a worked

@@ -175,3 +175,61 @@ hypothetical future requirements" instinct elsewhere in this codebase
 (e.g. `ingestion_fixed`'s `DocumentChunk`/`EmbeddingRecord` are the
 one deliberate exception, and even those are called out explicitly as
 such in their own docstrings).
+
+**Follow-up (2026-07-24, reranking shipped the same day):** when the time
+actually came, the `rerank` node still didn't add a `reranked_documents`
+field — see the next entry for why `documents` continues to be reused
+in place instead.
+
+---
+
+### Reranking: widen the FAISS pull, cross-encoder, overwrite `documents` in place
+
+**Decision:** `RetrieverFactory` now pulls `RERANK_CANDIDATES` (15)
+candidates from FAISS instead of `TOP_K` (3); a new `rerank` node
+(`nodes/rerank.py`) scores all 15 against the query with a cross-encoder
+and overwrites `state["documents"]`/`state["context"]` with just the top
+3 — the same fields `retrieve_context.py` already produces, not a
+parallel `reranked_documents` field.
+
+**Alternative considered:** keep `retrieve` pulling only `TOP_K` and add
+a separate `reranked_documents` state field the way the document's
+history (see the entry above) once speculatively declared and then
+removed.
+
+**Why overwrite instead of adding a parallel field:** nothing downstream
+of `rerank` needs to know the pre-rerank candidate set existed — by the
+time `generate` runs, "the retrieved documents" should unambiguously mean
+"the ones that survived reranking." A `reranked_documents` field would
+mean every future node has to know which of two similar-sounding fields
+is the one to actually use. Reusing `documents` keeps the state contract
+exactly as simple as it was before reranking existed.
+
+**Why a cross-encoder specifically, not an LLM-based rerank:** a
+cross-encoder scores `(query, chunk)` pairs jointly in one forward pass —
+that joint scoring is precisely what a bi-encoder similarity search
+(what FAISS already does) can't do, and it's a large part of why
+reranking helps at all (see
+`docs/reports/2026-07-24-reranking-validation.md`). An LLM-based rerank
+(asking the chat model to score or reorder candidates) would add a third
+LLM call per knowledge query on top of the two that already exist (intent,
+generation) — slower and more expensive for comparable benefit. The
+chosen model, `cross-encoder/ms-marco-MiniLM-L-6-v2`, ships inside the
+`sentence-transformers` package already used for embeddings — no new
+dependency, same weight class as `EMBEDDING_MODEL`.
+
+**Why widen to 15 candidates specifically, not some other number:** it
+needs to be large enough that a relevant chunk which similarity search
+ranked outside the old top-3 has a real chance of being *somewhere* in
+the pool for the cross-encoder to find — confirmed necessary in practice
+(the whole failure mode being fixed was "the right chunk exists in the
+index but FAISS's top-3 missed it"). 15 was a starting point, not tuned
+against a held-out set; if reranking's cost (see the validation report's
+latency note) turns out to matter, that's the first knob to revisit,
+env-overridable via `RERANK_CANDIDATES` without a code change.
+
+**Known limit, not solved by this decision:** identity/self-referential
+questions ("what is this document called") aren't reliably fixed by
+topical reranking — see the validation report §4. That's a different
+problem (source/section awareness, not relevance ranking) and is tracked
+separately in `05-roadmap.md`, not addressed by this change.

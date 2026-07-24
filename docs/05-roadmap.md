@@ -75,37 +75,43 @@ features. All three shipped in the same session as `v0.0.1`.
 
 ## v0.2.0 — Intelligence layer (README Phase 2)
 
+- [x] **Reranking after initial FAISS retrieval — shipped and validated
+      2026-07-24.** `RetrieverFactory` now pulls `RERANK_CANDIDATES=15`
+      chunks from FAISS instead of `TOP_K=3`; a new `rerank` node
+      (`src/workflow/nodes/rerank.py`) scores them with a cross-encoder
+      (`cross-encoder/ms-marco-MiniLM-L-6-v2`, via the already-present
+      `sentence-transformers` dependency) and keeps the top `TOP_K=3` for
+      generation. Directly fixed 5 of the 6 real failures identified in
+      `docs/reports/2026-07-24-academic-document-e2e-test.md` and
+      `docs/reports/2026-07-24-efficientnet-research-paper-e2e-test.md`
+      (re-tested, same questions, same indexes — not just theorized to
+      help): both Factor Analysis retrieval misses, and 3 of 4 EfficientNet
+      failures including converting the one confidently-wrong answer into
+      a safe refusal. Zero regressions across both 10-question suites.
+      Full validation: `docs/reports/2026-07-24-reranking-validation.md`.
+      Design rationale (why a cross-encoder, why 15 candidates, why not
+      reorder the graph differently): `07-design-decisions.md`.
 - [ ] Metadata-aware retrieval — filter by `document_type`, source, etc.
       The ingestion side already attaches this metadata per chunk;
       nothing here queries on it yet.
-- [ ] Reranking after initial FAISS retrieval.
-- [ ] Better chunk selection / dedup at the `retrieve` node. **Now backed
-      by real evidence, not just intuition:** `docs/reports/2026-07-24-academic-document-e2e-test.md`
-      found a 10-question Q&A suite against a dense technical PDF scored
-      6/10 fully correct, with both failures caused by `k=3` top-k
-      retrieval returning zero-diversity results (one question's top-3
-      were all from the same page) that crowded out the actually relevant
-      chunks. The report's §5 ruled out a competing explanation (chunk
-      size from a document misclassification) via a controlled rerun —
-      the same two questions failed identically with much smaller,
-      more granular chunks — which narrows the cause down to the
-      retrieval/ranking layer specifically, strengthening the case for
-      these two items over a chunking-side fix.
-- [ ] **New, higher-severity finding (2026-07-24):** source-attribution
-      failure — a third test document
-      (`docs/reports/2026-07-24-efficientnet-research-paper-e2e-test.md`,
-      a genuine research paper this time, correctly classified) asked
-      "what is the title of this paper" and got back a **confidently
-      wrong answer**: the title/authors of a paper *cited in the
-      References section*, not the document itself — even though the
-      correct title page was also in the retrieved context. Unlike every
-      other failure in either report, this wasn't a safe "I don't know";
-      the model picked the wrong source out of the ones it had. Nothing
-      in the current pipeline distinguishes "this chunk describes the
-      document" from "this chunk cites someone else." Needs either
-      chunk-level section-role metadata (references vs. body text) or a
-      generation-prompt-level awareness of it — bigger than a reranking
-      fix alone would solve.
+- [ ] Better chunk selection / dedup at the `retrieve` node. Partially
+      addressed by reranking (a cross-encoder naturally down-ranks
+      near-duplicate/redundant chunks relative to a genuinely distinct
+      relevant one), but no explicit diversity constraint exists yet —
+      keep as a smaller follow-up, not urgent given reranking's results.
+- [x→⚠️] **Source-attribution failure, partially resolved.** The
+      EfficientNet report's Q1 (confidently wrong answer, a References-
+      section citation mistaken for the document's own title) is no
+      longer *wrong* after reranking — it now safely refuses. It's still
+      not *correct*, though: reranking's cross-encoder still doesn't
+      reliably surface the actual title-page chunk for identity-type
+      questions ("what is this document called"). See
+      `docs/reports/2026-07-24-reranking-validation.md` §4 for why this
+      needs a different mechanism than topical-relevance reranking —
+      likely explicit chunk-level section-role metadata (references vs.
+      body vs. title/abstract) from the ingestion side, or a dedicated
+      "about this document" query path that doesn't rely on similarity
+      search at all. Not closing this item; downgrading its severity.
 
 (Query rewriting — `QueryRewriter` / `process_query` — already shipped,
 landed in commit `5e12446`.)

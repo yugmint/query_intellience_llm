@@ -56,13 +56,16 @@ pytest tests/ -v
 
 `tests/` (added 2026-07-24) covers the guardrail layer
 (`test_guardrail_validators.py`, `test_input_guardrail.py`) and every
-workflow node (`test_node_*.py`, one file per node) — 56 tests, all pure
-unit tests, no real LLM/FAISS/network call. `conftest.py` has the shared
+workflow node (`test_node_*.py`, one file per node, including
+`test_node_rerank.py`) — 64 tests, all pure unit tests, no real
+LLM/FAISS/reranker-model/network call. `conftest.py` has the shared
 fakes:
 
 - `FakeLLM` — stand-in for `resources.llm`; records every prompt, returns
   a scripted response (or raises, to test a failure path).
 - `FakeRetriever` — stand-in for `resources.retriever`.
+- `FakeReranker` — stand-in for `resources.reranker`; records every
+  `(query, chunk)` batch it's asked to score, returns scripted scores.
 - an autouse fixture resetting the `QueryRewriter` singleton between
   tests — it caches itself on the class (`QueryRewriter._instance`), so
   without this a `FakeLLM` from one test would leak into every later test

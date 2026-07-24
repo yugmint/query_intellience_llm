@@ -549,9 +549,9 @@ including the `/reload` endpoint and a known bootstrap-order gotcha.
 pytest tests/ -v
 ```
 
-Covers the guardrail validator chain and every workflow node (56 tests,
-all mocked LLM/retriever, no real network calls); see
-`docs/03-development-guide.md`.
+Covers the guardrail validator chain and every workflow node, including
+reranking (64 tests, all mocked LLM/retriever/reranker, no real network
+calls); see `docs/03-development-guide.md`.
 
 ## Run Evaluation
 

@@ -1,5 +1,12 @@
 # End-to-End Test Report — Genuine Research Paper (Third Document)
 
+> **Update (2026-07-24, later same day):** Q5/Q6/Q8 below are **fixed**
+> via reranking. Q1 (the confidently-wrong answer) is **no longer wrong**
+> — it now safely refuses instead — but is still not fully correct; see
+> [2026-07-24-reranking-validation.md](2026-07-24-reranking-validation.md) §4
+> for why that one specific case is more nuanced. Left this report's
+> original findings intact below for the record.
+
 **Date:** 2026-07-24
 **Document:** `Computer Vision_2.pdf` — actually **"EfficientNet: Rethinking
 Model Scaling for Convolutional Neural Networks"** (Tan & Le, Google

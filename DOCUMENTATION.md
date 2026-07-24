@@ -81,19 +81,28 @@ python main.py
 
 ### 3.2 Resources — `resources.py`
 
-`RAGResources` is a frozen dataclass acting as a dependency-injection
-container: `llm`, `embeddings`, `vectorstore`, `retriever`, `memory`.
-`build_resources(memory)` builds each once via factories:
+`RAGResources` is a **mutable** `@dataclass(slots=True)` (not frozen —
+that's load-bearing, see below) acting as a dependency-injection
+container: `llm`, `embeddings`, `vectorstore`, `retriever`, `reranker`.
+**Not `memory`** — that's session-scoped and carried through
+`RAGState["session_memory"]` per request instead (see §12), since a
+process-wide `resources.memory` would race under concurrent requests for
+different sessions. `build_resources()` (no arguments) builds each once
+via factories:
 
 ```
 EmbeddingFactory.get() → VectorStoreFactory.load(embeddings)
                        → RetrieverFactory.build(vectorstore)
+RerankerFactory.get()
 LLMFactory.get()
 ```
 
 Called a single time in `RAGService.__init__`, then closed over by every node
 function in `workflow.py` — this is what avoids reloading the embedding
-model / FAISS index / LLM client on every request.
+model / FAISS index / LLM client / reranker on every request. Being
+mutable (not frozen) is what lets `RAGService.reload_index()` swap
+`resources.vectorstore`/`resources.retriever` in place without rebuilding
+the compiled graph — see §12.
 
 ### 3.3 Graph — `workflow.py`
 
@@ -123,7 +132,8 @@ Nodes (`src/workflow/nodes/`), each wrapped with `@log_node(...)` from
 | `guardrail_response` | `guardrail_response.py` | Builds the rejection answer from `state["guardrail_reason"]`, sets `status="rejected"` |
 | `intent` | `intent.py` | LLM classification → `greeting` / `chit_chat` / `knowledge`; falls back to `"knowledge"` on JSON-parse failure |
 | `process_query` | `process_query.py` | Knowledge branch only. `QueryRewriter.get(resources).rewrite(...)` → `rewritten_query` |
-| `retrieve` | `retrieve_context.py` | `resources.retriever.invoke(rewritten_query or query)`, joins `page_content` into `context` |
+| `retrieve` | `retrieve_context.py` | `resources.retriever.invoke(rewritten_query or query)` — pulls `RERANK_CANDIDATES` (15) chunks, not the final count |
+| `rerank` | `rerank.py` | Cross-encoder scores the 15 candidates, keeps top `TOP_K` (3), rebuilds `context`. Added 2026-07-24 — see `docs/07-design-decisions.md` and `docs/reports/2026-07-24-reranking-validation.md`. |
 | `generate` (knowledge) | `generate_knowledge.py` | Builds prompt via `src/prompts/generation.py`, invokes LLM, expects `{"response": "..."}` |
 | `conversation` | `generate_conversation.py` | Inline prompt (not in `src/prompts/`) for greeting/chit-chat, no retrieval |
 | `memory` | `update_memory.py` | Appends user/AI turn to `resources.memory` |
@@ -138,11 +148,12 @@ it lives now.
 
 | Module | Contents |
 |---|---|
-| `config.py` | Constants: `MODEL_NAME = "llama-3.1-8b-instant"`, `EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"`, `FAISS_PATH = "faiss_index"`, `TOP_K = 3`. Also a leftover unused `pdf_path` constant, a vestige of the pre-refactor single-script era. |
+| `config.py` | Constants: `MODEL_NAME = "llama-3.1-8b-instant"`, `EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"`, `FAISS_PATH = "faiss_index"`, `TOP_K = 3` (final chunk count reaching generation), `RERANK_CANDIDATES = 15` (FAISS pull size before reranking), `RERANK_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"`. Also a leftover unused `pdf_path` constant, a vestige of the pre-refactor single-script era. |
 | `embeddings.py` | `EmbeddingFactory` (singleton). Builds `HuggingFaceEmbeddings`, auto-selects `cuda` if `torch.cuda.is_available()` else `cpu`, `normalize_embeddings=True`. |
 | `llm.py` | `LLMFactory` (singleton). Loads the Groq API key from `cred.json` (`grok_api_key`, or env `GROQ_API_KEY`), builds via `init_chat_model(MODEL_NAME, model_provider="groq")`. |
 | `memory.py` | `get_memory()` → fresh `InMemoryChatMessageHistory` (non-persistent, per-process only — history is lost on restart). |
-| `retriever.py` | `RetrieverFactory.build(vectorstore)` → `vectorstore.as_retriever(search_kwargs={"k": TOP_K})`. Plain similarity search, `k=3`; no reranking or hybrid search yet (matches README's Phase 2/3 roadmap). |
+| `reranker.py` | `RerankerFactory` (singleton, lazy-imports `sentence_transformers.CrossEncoder` so importing this module doesn't force the import/download for callers that never rerank). Added 2026-07-24. |
+| `retriever.py` | `RetrieverFactory.build(vectorstore)` → `vectorstore.as_retriever(search_kwargs={"k": RERANK_CANDIDATES})`. **Not `TOP_K`** — pulls a wider candidate pool for the `rerank` node to narrow down; a retriever built here without a following rerank step returns more documents than `TOP_K`. Hybrid/BM25 search still not implemented (README Phase 3 roadmap). |
 | `vectorstore.py` | `VectorStoreFactory.load(embeddings)` → `FAISS.load_local(FAISS_PATH, embeddings, allow_dangerous_deserialization=True)`. **Load only — no build/ingest logic here.** |
 | ~~`rag_pipeline_archived.py`~~ | **Removed 2026-07-24** (`git rm`, recoverable from history). Was dead code — not imported anywhere in the active codebase, and non-importable as-is (imported `get_embeddings`/`get_llm` functions that no longer exist in `embeddings.py`/`llm.py`). It was the direct ancestor of today's node-based workflow: a single `RAGPipeline` class doing retrieval + a combined intent/response prompt + memory update in one `.query()` method. |
 
